@@ -7,11 +7,13 @@ from airflow.providers.ssh.hooks.ssh import SSHHook
 
 from dna_dags.downstream_qc_workflow import downstream_qc_workflow_to_slurm
 # from dna_dags.poll_slurm_job_status import poll_slurm_job_status
+from dna_dags.email_pre import generate_pre_email_task
+from dna_dags.email_post import generate_post_email_task
 
-#Loading smtp module
-# import smtplib
-# from email.message import EmailMessage
-# from airflow.hooks.base import BaseHook
+# Loading smtp module
+import smtplib
+from email.message import EmailMessage
+from airflow.hooks.base import BaseHook
 
 
 """Defining dag profiles, schedule_interval is set to None, since it is based on trigger based dagrun"""
@@ -45,9 +47,9 @@ bash_task = BashOperator(
 
 
 """Defining QC workflow using Python operator"""
-downstream_qc_workflow_task = PythonOperator(
+downstream_analysis_task = PythonOperator(
     dag=dag,
-    task_id='downstream_qc_workflow',
+    task_id='Downstream_analysis',
     provide_context=True,
     python_callable=downstream_qc_workflow_to_slurm,
 )
@@ -62,18 +64,19 @@ downstream_qc_workflow_task = PythonOperator(
 # email_pre_sent_task = PythonOperator(
 #     task_id='email_pre_sent',
 #     retries=1,
-#     python_callable=run_pre_email_task,
+#     python_callable=generate_pre_email_task,
 #     dag=dag
 # )
 
 # email_post_sent_task = PythonOperator(
 #     task_id='email_post_sent',
 #     retries=1,
-#     python_callable=run_post_email_task,
+#     python_callable=generate_post_email_task,
 #     dag=dag
 # )
 
-rsync_work_to_scratch_task >> bash_task >> downstream_qc_workflow_task 
+# rsync_work_to_scratch_task >> email_pre_sent_task  >> bash_task >> downstream_qc_workflow_task >> email_post_sent_task
+rsync_work_to_scratch_task   >> bash_task >> downstream_analysis_task
 
 
 

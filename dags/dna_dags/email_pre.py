@@ -9,15 +9,19 @@ from email.message import EmailMessage
 from airflow.hooks.base import BaseHook
 
 
-
-def generate_email_task(ds, **kwargs):
+def generate_pre_email_task(ds, **kwargs):
     dag_run = kwargs['dag_run']
-    email_id = dag_run.conf['email_id']
-    default = "nyuad.cgsb.cb@nyu.edu"
+    email_id = dag_run.conf['email_address']
+    base_path = dag_run.conf['base_path']
+    samples = dag_run.conf['selected_items']
+    default = "jr5241@nyu.edu"
 
     # SMTP configuration begins
-    subject = f"Processing 10X sequencing run "
-    body = (f"Your recent runhas started processing. \n"
+    subject = f"Downstream Analysis Initiated"
+    body = (f"Your recent downstream analysis has started processing. \n"
+                "\n"
+                f"Your selected samples are: {samples}.\n"
+                f"Your basepath is: {base_path}.\n"
                  "You will automatically be notified once the run has processed successfully.\n"
                  "Note that this is an automated message please do not respond to this email as it is not monitored.\n"
                  "\n"
@@ -36,8 +40,9 @@ def generate_email_task(ds, **kwargs):
 
     # Compose the template
     msg = EmailMessage()
-    msg['From'] = "Sequencing Run Notification"
-    to = (f"{email_id},{default}")
+    msg['From'] = "Downstream Analysis Notification"
+    # to = (f"{email_id},{default}")
+    to = (f"{email_id}")
     msg['To'] = to
     msg['Subject'] = subject
     msg.set_content(body)
@@ -49,5 +54,5 @@ def generate_email_task(ds, **kwargs):
 
 
 
-def run_pre_email_task(ds, **kwargs):
-    generate_email_task(ds, **kwargs)
+# def run_pre_email_task(ds, **kwargs):
+#     generate_email_task(ds, **kwargs)
