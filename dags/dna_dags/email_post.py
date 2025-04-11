@@ -13,14 +13,15 @@ def generate_post_email_task(ds, **kwargs):
     email_id = dag_run.conf['email_address']
     base_path = dag_run.conf['base_path']
     samples = dag_run.conf['selected_items']
-    default = "jr5241@nyu.edu"
+    default = "nyuad.cgsb.cb@nyu.edu"
 
     # SMTP configuration begins
     subject = f"Downstream Analysis Completed"
     body = (f"Your recent downstream analysis has successfully completed. \n\n"
                  "\n"
-                f"Your selected samples are: {samples}.\n"
-                f"Your basepath is: {base_path}.\n"
+                f"Your selected samples are: {samples}\n"
+                f"Your basepath is: {base_path}\n"
+                 "\n"
                 "Note that this is an automated message please do not respond to this email as it is not monitored.\n"
                 "\n"
                 "Regards\n"

@@ -5,11 +5,11 @@ global:
     - outdir: ./
     - root_in_dir: ./
     # Find Samples
-    - sample_rule: (W.*)$
+    - sample_rule: (G13.*)$
     - by_sample_outdir: 1
     - find_by_dir: 1
     #The data_dirs and very site specific variables  - be sure to change these!
-    - REFERENCE: "/scratch/Reference_Genomes/Public/Invertebrate/Rhynchophorus_ferrugineus/weevil_10x"
+    - REFERENCE: "/scratch/Reference_Genomes/Public/Invertebrate/Drosophila_melanogaster/10XDrosophila/10xdrosophila-stinger-egfp/drosophila-stinger-egfp"
     #HPC Directives
     - HPC:
        - module: 'gencore gencore_biosails'

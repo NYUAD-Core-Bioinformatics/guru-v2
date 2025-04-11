@@ -5,26 +5,26 @@ global:
     - outdir: ./
     - root_in_dir: ./
     # Find Samples
-    - sample_rule: (W.*)$
+    - sample_rule: (ma3803_.*)$
     - by_sample_outdir: 1
     - find_by_dir: 1
     #The data_dirs and very site specific variables  - be sure to change these!
-    - REFERENCE: "/scratch/Reference_Genomes/Public/Invertebrate/Rhynchophorus_ferrugineus/weevil_10x"
+    - REFERENCE: "/scratch/Reference_Genomes/Public/Vertebrate_mammalian/Homo_sapiens/refdata-cellranger-GRCh38-1.2.0"
     #HPC Directives
     - HPC:
        - module: 'gencore gencore_biosails'
+       - partition: 'gencore'
        - commands_per_node: 1
        - cpus_per_task: 1
        - account: 'gencore'
-       - partition: 'gencore'
 rules:
     - cellranger_count:
         local:
                 - create_outdir: 0
                 - HPC:
-                   - walltime: '190:00:00'
-                   - mem: '420GB'
-                   - cpus_per_task: 24
+                   - walltime: '48:00:00'
+                   - mem: '200GB'
+                   - cpus_per_task: 48
         process: |
             #TASK tags={$sample}
             cellranger count \
@@ -33,5 +33,5 @@ rules:
             --sample={$self->sample} \
             --transcriptome={$self->REFERENCE} \
             --jobmode=local \
-            --localcores=24 \
-            --localmem=400
+            --localcores=48 \
+            --localmem=180

@@ -6,7 +6,6 @@ from airflow.operators.bash import BashOperator
 from airflow.providers.ssh.hooks.ssh import SSHHook
 
 from dna_dags.downstream_qc_workflow import downstream_qc_workflow_to_slurm
-# from dna_dags.poll_slurm_job_status import poll_slurm_job_status
 from dna_dags.email_pre import generate_pre_email_task
 from dna_dags.email_post import generate_post_email_task
 
@@ -50,33 +49,25 @@ bash_task = BashOperator(
 downstream_analysis_task = PythonOperator(
     dag=dag,
     task_id='Downstream_analysis',
-    provide_context=True,
     python_callable=downstream_qc_workflow_to_slurm,
 )
 
-# poll_slurm_task = PythonOperator(
-#     task_id='poll_slurm_status',
-#     python_callable=poll_slurm_job_status,
-#     provide_context=True,
-#     dag=dag,
-# )
+email_pre_sent_task = PythonOperator(
+     task_id='email_pre_sent',
+     retries=1,
+     python_callable=generate_pre_email_task,
+     dag=dag
+)
 
-# email_pre_sent_task = PythonOperator(
-#     task_id='email_pre_sent',
-#     retries=1,
-#     python_callable=generate_pre_email_task,
-#     dag=dag
-# )
+email_post_sent_task = PythonOperator(
+     task_id='email_post_sent',
+     retries=1,
+     python_callable=generate_post_email_task,
+     dag=dag
+)
 
-# email_post_sent_task = PythonOperator(
-#     task_id='email_post_sent',
-#     retries=1,
-#     python_callable=generate_post_email_task,
-#     dag=dag
-# )
-
-# rsync_work_to_scratch_task >> email_pre_sent_task  >> bash_task >> downstream_qc_workflow_task >> email_post_sent_task
-rsync_work_to_scratch_task   >> bash_task >> downstream_analysis_task
+rsync_work_to_scratch_task >> email_pre_sent_task  >> bash_task >> downstream_analysis_task >> email_post_sent_task
+#rsync_work_to_scratch_task   >> bash_task >> downstream_analysis_task
 
 
 

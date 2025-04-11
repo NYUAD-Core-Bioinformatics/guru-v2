@@ -19,10 +19,10 @@ from airflow.operators.bash import BashOperator
 from airflow.providers.ssh.hooks.ssh import SSHHook
 
 from wtforms import Form, StringField
-from wtforms.validators import ValidationError, InputRequired, EqualTo
 
 
-YAML_FILES_DIR = "/Users/jr5241/cgsb-work/guru_v3_debug/plugins/templates/yaml_files"
+
+YAML_FILES_DIR = "/opt/airflow/plugins/templates/yaml_files"
 
 # Blueprints for the plugin
 bp = Blueprint(
@@ -278,21 +278,23 @@ def parse_uploaded_file():
         return jsonify({"message": f"Error parsing file: {str(e)}", "status": "error"}), 500
 
 
-# """Function to validate multiple email address syntax."""
-# def validate_emails(form, field):
-#     emails = field.data
-#     email_id = field.data.split(',')
-#     regex = r'^\S+@\S+\.\S+$'
-#     invalid_emails = []
-#     for email in email_id:
-#         if not re.match(regex, email.strip()):
-#             invalid_emails.append(email.strip())
-#     if invalid_emails:
-#         raise ValidationError('Invalid email address format: {}'.format(', '.join(invalid_emails)))
+@samples_bp.route('/validate_email', methods=['POST'])
+@csrf.exempt
+def validate_email():
+    data = request.get_json()
+    emails = data.get("email_address", "").strip()
+    if not emails:
+        return jsonify({"status": "error", "message": "Email is required."}), 400
+
+    email_list = [e.strip() for e in emails.split(',')]
+    regex = r'^\S+@\S+\.\S+$'
+    invalid = [e for e in email_list if not re.match(regex, e)]
+    if invalid:
+        return jsonify({"status": "error", "message": f"Invalid email(s): {', '.join(invalid)}"}), 400
+    return jsonify({"status": "success", "message": "Valid email address(es)."}), 200
 
 
 class MyForm(Form):
-    # email_address = StringField('Email Address', [InputRequired(),validate_emails], render_kw={"placeholder": "Specify email by one or many seperated by comma"})
     sample_group = BooleanField('Samples grouped in different folders.')
 
 class DNAseqBaseView(AppBuilderBaseView):
@@ -307,11 +309,12 @@ class DNAseqBaseView(AppBuilderBaseView):
             selected_workflow = request.form.get("selected_workflow", "")
             selected_items = request.form.get("selected_items", "")
             base_path = request.form.get("base_path", "")
+            email_address = request.form.get("email_address", "")
             print("✅ Selected Items (comma-separated):", selected_workflow, base_path)
 
             # Trigger the DAG run
             now = datetime.now()
-            dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+            dt_string = now.strftime("%d-%m-%Y %H:%M:%S")
             run_id = "test_" + dt_string
 
             dagbag = DagBag('dags')
@@ -320,12 +323,12 @@ class DNAseqBaseView(AppBuilderBaseView):
                 run_id=run_id,
                 state=State.RUNNING,
                 conf={
-                    'selected_items': selected_items, 'base_path': base_path, 'selected_workflow': selected_workflow # Pass selected items to conf
+                    'selected_items': selected_items, 'base_path': base_path, 'selected_workflow': selected_workflow, 'email_address': email_address, 
                 }
             )
 
             # Render the response template
-            data = {'selected_items': selected_items, 'base_path': base_path, 'selected_workflow': selected_workflow}
+            data = {'selected_items': selected_items, 'base_path': base_path, 'selected_workflow': selected_workflow, 'email_address': email_address}
             data['status_url'] = f"http://{os.environ['AIRFLOW_URL']}:{os.environ['AIRFLOW_PORT']}/dags/dnaseq_dag/graph"
             return self.render_template("dnaseq_response.html", data=data)
         else:

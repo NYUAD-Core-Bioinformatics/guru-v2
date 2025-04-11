@@ -14,14 +14,15 @@ def generate_pre_email_task(ds, **kwargs):
     email_id = dag_run.conf['email_address']
     base_path = dag_run.conf['base_path']
     samples = dag_run.conf['selected_items']
-    default = "jr5241@nyu.edu"
+    default = "nyuad.cgsb.cb@nyu.edu"
 
     # SMTP configuration begins
     subject = f"Downstream Analysis Initiated"
     body = (f"Your recent downstream analysis has started processing. \n"
                 "\n"
-                f"Your selected samples are: {samples}.\n"
-                f"Your basepath is: {base_path}.\n"
+                f"Your selected samples are: {samples}\n"
+                f"Your basepath is: {base_path}\n"
+                "\n"
                  "You will automatically be notified once the run has processed successfully.\n"
                  "Note that this is an automated message please do not respond to this email as it is not monitored.\n"
                  "\n"
