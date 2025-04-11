@@ -50,6 +50,10 @@
         {
         % endfor %
     }
+
+    .checkbox-group:empty {
+        display: none;
+    }
 </style>
 <link rel="icon" type="image/png" href="{{ url_for('static', filename='pin_32.png') }}">
 {% endblock %}
@@ -682,6 +686,7 @@ sampleS3_20252211_L001,sampleS3_20252211_L001_fastp_1.fastq,sampleS3_20252211_L0
         errorMsg.textContent = "";
         errorMsg.style.display = "none";
         checkboxesDiv.innerHTML = "";
+        checkboxesDiv.style.display = "none"; // Hide by default when clearing content
 
         if (!basePath || fileInput.files.length === 0) {
             errorMsg.textContent = !basePath ? "Please enter a valid base path." : "Please upload a file first.";
@@ -706,7 +711,7 @@ sampleS3_20252211_L001,sampleS3_20252211_L001_fastp_1.fastq,sampleS3_20252211_L0
                     `<input type="checkbox" class="itemCheckbox" value="${sample}"><label>${sample}</label><br>`
                 ).join("");
 
-            checkboxesDiv.style.display = "block";
+            checkboxesDiv.style.display = "block"; // Only show when there's content
         } catch {
             errorMsg.textContent = "Error parsing file. Please try again.";
             errorMsg.style.display = "block";
