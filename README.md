@@ -45,15 +45,28 @@ chmod 600 keys/id_rsa
 
 Note: You can set the IP address for the Guru instance by editing the .env file.
  
+#### Building the Application 
+
 Run the following script to start the Guru instance (initialization may take ~5 minutes):
 
 ``` bash
 sh build.sh
 ```
 
-To access the Guru User [http://IP-address:8080](http://IP-address:8080)
+#### Accessing the Application
+
+To access the Guru User Interface [http://IP-address:8080](http://IP-address:8080)
 and use the credentials **airflow**/**airflow**.
+
+Then navigate to ```Downstream Analysis``` button to start the analysis. 
 
 Note:- 
 - If you run this service on a server, specify the (IP-address or hostname):8080 on the browser. 
 - If you run this service on a standalone machine (e.g. laptop), specify localhost:8080 on the browser.
+
+
+To delete the guru instance completely from your computer. 
+
+``` bash 
+sh prune.sh
+```
