@@ -1,0 +1,37 @@
+---
+global:
+    # ROOT Directory configurations
+    - indir: ./
+    - outdir: ./
+    - root_in_dir: ./
+    # Find Samples
+    - sample_rule: (.*)$
+    - by_sample_outdir: 1
+    - find_by_dir: 1
+    #The data_dirs and very site specific variables  - be sure to change these!
+    - REFERENCE: "/scratch/Reference_Genomes/Public/Vertebrate_other/Danio_rerio/10x_ENSEMBL_release_84/Danio_rerio.GRCz10"
+    #HPC Directives
+    - HPC:
+       - module: 'gencore gencore_biosails'
+       - partition: 'gencore'
+       - commands_per_node: 1
+       - cpus_per_task: 1
+       - account: 'gencore'
+rules:
+    - cellranger_count:
+        local:
+                - create_outdir: 0
+                - HPC:
+                   - walltime: '48:00:00'
+                   - mem: '200GB'
+                   - cpus_per_task: 24
+        process: |
+            #TASK tags={$sample}
+            cellranger count \
+            --id={$self->sample}_cellrangerCount \
+            --fastqs=. \
+            --sample={$self->sample} \
+            --transcriptome={$self->REFERENCE} \
+            --jobmode=local \
+            --localcores=24 \
+            --localmem=180

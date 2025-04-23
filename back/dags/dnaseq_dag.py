@@ -24,6 +24,18 @@ dag = DAG('dnaseq_dag', description='DNAseq DAG',
 ssh_hook = SSHHook(ssh_conn_id='guru_ssh')
 ssh_hook.no_host_key_check = True
 
+rsync_work_to_scratch_command = """
+        mkdir -p /scratch/jr5241/test-airflow
+        rsync -av /scratch/jr5241/soft/* /scratch/jr5241/test-airflow
+"""
+
+rsync_work_to_scratch_task = SSHOperator(
+    task_id='rsync_work_to_scratch',
+    ssh_hook=ssh_hook,
+    command=rsync_work_to_scratch_command,
+    dag=dag
+)
+
 
 
 bash_task = BashOperator(
@@ -54,4 +66,8 @@ email_post_sent_task = PythonOperator(
      dag=dag
 )
 
-bash_task >> email_pre_sent_task  >> downstream_analysis_task >> email_post_sent_task
+rsync_work_to_scratch_task >> email_pre_sent_task  >> bash_task >> downstream_analysis_task >> email_post_sent_task
+#rsync_work_to_scratch_task   >> bash_task >> downstream_analysis_task
+
+
+

@@ -18,7 +18,10 @@ from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
 from airflow.providers.ssh.hooks.ssh import SSHHook
 
-#Define the biosails yml. Change this path to custom installation.
+from wtforms import Form, StringField
+
+
+
 YAML_FILES_DIR = "/opt/airflow/plugins/templates/yaml_files"
 
 # Blueprints for the plugin
@@ -71,6 +74,7 @@ def download_yaml():
 
         if not filepath:
             return jsonify(error="File not found"), 404
+
         return send_file(filepath, as_attachment=True)
 
     except Exception as e:
@@ -220,7 +224,7 @@ def upload_file():
         sftp = ssh_client.open_sftp()
 
         try:
-            sftp.chdir(base_path)  
+            sftp.chdir(base_path)  # ✅ Checks if base_path exists
         except IOError:
             return jsonify({"message": "Base path does not exist on the remote server.", "status": "error"}), 400
 
@@ -306,7 +310,7 @@ class DNAseqBaseView(AppBuilderBaseView):
             selected_items = request.form.get("selected_items", "")
             base_path = request.form.get("base_path", "")
             email_address = request.form.get("email_address", "")
-            print("Selected Items (comma-separated):", selected_workflow, base_path)
+            print("✅ Selected Items (comma-separated):", selected_workflow, base_path)
 
             # Trigger the DAG run
             now = datetime.now()

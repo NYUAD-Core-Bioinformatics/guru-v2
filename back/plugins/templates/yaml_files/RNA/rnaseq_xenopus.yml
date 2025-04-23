@@ -1,0 +1,164 @@
+---
+global:
+  - indir: data/processed
+  - outdir: data/analysis_xenopus
+  - hisat_align: 'data/analysis_xenopus/{$sample}/samtools_sort/{$sample}_hisat2.sorted.bam'
+  - sample_rule: (da2451.*)
+  - by_sample_outdir: '1'
+  - find_by_dir: '1'
+  - jira_ticket: "NCB-855"
+  - root_in_dir: "data/processed"
+  - root_out_dir: "data/analysis_xenopus"
+  - fastp_dir: "{$self->root_in_dir}"
+  - TR1: "{$self->fastp_dir}/{$sample}/fastp/{$sample}_fastp_read1.fastq.gz"
+  - TR2: "{$self->fastp_dir}/{$sample}/fastp/{$sample}_fastp_read2.fastq.gz"
+  - analysis_dir: data/analysis_xenopus/
+  - REFERENCE: '/scratch/Reference_Genomes/Public/Vertebrate_other/Xenopus_laevis/9.2/XL9_2_trans'
+  - ANNOTATION: '/scratch/Reference_Genomes/Public/Vertebrate_other/Xenopus_laevis/9.2/XENLA_9.2_Xenbase.gtf'
+  - HPC:
+      - module: gencore gencore_qc gencore_rnaseq gencore_biosails
+      - commands_per_node: '1'
+      - cpus_per_task: '1'
+      - account: 'gencore'
+rules:
+  - hisat2:
+      local:
+        - OUTPUT: '{$self->outdir}/{$sample}_hisat2.sam'
+        - HPC:
+            - walltime: '04:00:00'
+            - mem: 55GB
+            - cpus_per_task: '14'
+      process: |
+        #TASK tags={$sample}
+        hisat2 \
+        -x {$self->REFERENCE} \
+        --dta \
+        -p 14 \
+        -1 {$self->TR1} \
+        -2 {$self->TR2} \
+        -S {$self->OUTPUT}
+  - samtools_view:
+      local:
+        - INPUT: '{$self->analysis_dir}/{$sample}/hisat2/{$sample}_hisat2.sam'
+        - OUTPUT: '{$self->outdir}/{$sample}_hisat2.bam'
+        - HPC:
+            - deps: hisat2
+            - walltime: '02:00:00'
+            - mem: 55GB
+            - cpus_per_task: '1'
+      process: |
+        #TASK tags={$sample}
+        samtools view -Su {$self->INPUT} > {$self->OUTPUT}
+  - samtools_sort:
+      local:
+        - INPUT: '{$self->analysis_dir}/{$sample}/samtools_view/{$sample}_hisat2.bam'
+        - OUTPUT: '{$self->outdir}/{$sample}_hisat2.sorted.bam'
+        - HPC:
+            - deps: samtools_view
+            - walltime: '04:00:00'
+            - mem: 55GB
+            - cpus_per_task: '14'
+      process: |
+        #TASK tags={$sample}
+        samtools sort -@ 14 -o {$self->OUTPUT} {$self->INPUT}
+  - stringtie_1:
+      local:
+        - INPUT: '{$self->hisat_align}'
+        - OUTPUT: '{$self->outdir}/{$sample}_stringtie1.gtf'
+        - HPC:
+            - deps: samtools_sort
+            - walltime: '05:00:00'
+            - mem: 55GB
+            - cpus_per_task: '14'
+      process: |
+        #TASK tags={$sample}
+        stringtie \
+        {$self->INPUT} \
+        -G {$self->ANNOTATION} \
+        -l {$sample} \
+        -o {$self->OUTPUT} \
+        -p 14
+  - stringtie_merge:
+      local:
+        - override_process: '1'
+        - outdir: 'data/analysis_xenopus'
+        - OUTPUT: '{$self->outdir}/stringtie_merge.gtf'
+        - HPC:
+            - deps: stringtie_1
+            - walltime: '06:00:00'
+            - mem: 90GB
+            - cpus_per_task: '1'
+      process: |
+        #TASK tags={$sample}
+        ls -1 {$self->outdir}/*/stringtie_1/*.gtf > {$self->outdir}/transcripts_list.txt && \
+        stringtie --merge \
+        -G {$self->ANNOTATION} \
+        -o {$self->OUTPUT} \
+        {$self->outdir}/transcripts_list.txt
+  - stringtie_2:
+      local:
+        - INPUT: '{$self->hisat_align}'
+        - HPC:
+            - deps: stringtie_merge
+            - walltime: '05:00:00'
+            - mem: 55GB
+            - cpus_per_task: '14'
+      process: |
+        #TASK tags={$sample}
+        stringtie \
+        {$self->INPUT} \
+        -eB \
+        -G {$self->analysis_dir}/stringtie_merge.gtf  \
+        -l {$sample} \
+        -o {$self->outdir}/{$sample}_stringtie_2.gtf \
+        -p 14
+  - htseq_count:
+      local:
+        - INPUT: "{$self->hisat_align}"
+        - OUTPUT: "{$self->outdir}/{$sample}_rawCounts.txt"
+        - HPC:
+            - deps: samtools_sort
+            - walltime: '12:00:00'
+            - mem: '55GB'
+            - cpus_per_task: '1'
+      process: |
+        #TASK tags={$sample}
+        htseq-count -f bam -s no -t exon \
+        -i gene_id \
+        {$self->INPUT} \
+        {$self->ANNOTATION} > {$self->OUTPUT} && \
+        sed -i '/^__.*/d'  {$self->OUTPUT}
+  - qualimap:
+      local:
+        - INPUT: "{$self->hisat_align}"
+        - HPC:
+            - deps: samtools_sort
+            - walltime: '08:00:00'
+            - mem: '90GB'
+            - cpus_per_task: '1'
+      process: |
+        #TASK tags={$sample}
+        qualimap \
+        --java-mem-size=90G \                           
+        rnaseq \                                        
+        -a uniquely-mapped-reads \                      
+        -bam {$self->INPUT} \            
+        -gtf {$self->ANNOTATION} \             
+        -outdir {$self->outdir} \                       
+        -p non-strand-specific \ 
+        -outformat PDF:HTML \
+        -outfile {$self->outdir}/{$sample}_qualimap.pdf \
+        -pe
+  - multiqc:
+      local:
+        - create_outdir: 0
+        - override_process: 1
+        - HPC:
+            - deps: 'qualimap,stringtie_2,htseq_count'
+            - walltime: '01:00:00'
+            - mem: '30GB'
+            - cpus_per_task: '1'
+      process: |
+        module load gencore_qc && \
+        multiqc -d -i {$self->jira_ticket} \
+        -n {$self->root_out_dir}/{$self->jira_ticket}.html {$self->root_out_dir}/

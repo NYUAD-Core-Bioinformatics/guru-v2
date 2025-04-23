@@ -1,0 +1,805 @@
+{% extends 'appbuilder/baselayout.html' %}
+{% from 'airflow/_messages.html' import show_message %}
+
+{% block page_title -%}
+{% if title is defined -%}
+{{ title }} - {{ appbuilder.app_name }}
+{% else -%}
+{{ appbuilder.app_name }}
+{% endif%}
+{% endblock %}
+
+{% block head_meta %}
+{{ super() }}
+{% if scheduler_job is defined and scheduler_job.is_alive() %}
+<meta name="is_scheduler_running" content="True">
+{% endif %}
+{% endblock %}
+
+{% block head_css %}
+{{ super() }}
+{% if not appbuilder.app_theme %}
+<link rel="stylesheet" type="text/css" href="{{ url_for_asset('airflowDefaultTheme.css') }}">
+{% endif %}
+<link rel="stylesheet" type="text/css" href="{{ url_for_asset('materialIcons.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for_asset('main.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for_asset('loadingDots.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for_asset('bootstrap-datetimepicker.min.css') }}">
+<style type="text/css">
+    {
+        % for state,
+        state_color in state_color_mapping.items() %
+    }
+
+    span. {
+            {
+            state
+        }
+    }
+
+        {
+        background-color: {
+                {
+                state_color
+            }
+        }
+
+        ;
+    }
+
+        {
+        % endfor %
+    }
+
+    .checkbox-group:empty {
+        display: none;
+    }
+</style>
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='pin_32.png') }}">
+{% endblock %}
+
+
+
+{% block messages %}
+    <div class="container">
+        <div class="form-group">
+            <label for="email_address">Email Address</label>
+            <div class="input-group" style="width: 40%;">
+                <input type="text" id="email_address" class="form-control" placeholder="Enter comma-separated emails">
+                <span class="input-group-btn">
+                    <button type="button" class="btn btn-primary" onclick="validateEmailInput()">Validate Email</button>
+                </span>
+            </div>
+            <div id="emailError" class="text-danger" style="display: none; margin-top: 5px;"></div>
+        </div>
+    <!-- Sample Selection Section -->
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h3 class="panel-title">Sample Selection</h3>
+        </div>
+        <div class="panel-body">
+            <!-- Mode Selection -->
+            <div class="form-group">
+                <label class="radio-inline">
+                    <input type="radio" name="selectionMode" value="folders" checked onclick="toggleSelection('folders')">
+                    <strong>Default</strong>
+                </label>
+                <label class="radio-inline">
+                    <input type="radio" name="selectionMode" value="files" onclick="toggleSelection('files')">
+                    <strong>Custom</strong>
+                </label>
+            </div>
+
+            <!-- Default Mode Section -->
+            <div id="foldersSection" class="selection-section">
+                <div class="form-group">
+                    <label for="basePath"><strong>Base Path:</strong></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="basePath" 
+                               placeholder="Enter base path (e.g., /Users/jr5241/test/UnAligned/)">
+                        <span class="input-group-btn">
+                            <button class="btn btn-primary" onclick="listFolders()">List Folders</button>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Results Section - Initially Hidden -->
+                <div id="folderResults" style="display: none;">
+                    <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+                    <div id="defaultCheckboxes" class="checkbox-group"></div>
+                    <button class="btn btn-success" onclick="saveSelections('default')">Save Selections</button>
+                    <span id="saveMessage" class="text-success"></span>
+                </div>
+            </div>
+
+            <!-- Custom Mode Section -->
+            <div id="customSection" class="selection-section" style="display: none;">
+                <div class="form-group">
+                    <label for="customBasePath"><strong>Base Path:</strong></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="customBasePath" 
+                               placeholder="Enter base path (e.g., /Users/jr5241/test/UnAligned/)">
+                        <span class="input-group-btn">
+                            <button class="btn btn-primary" onclick="Savefile()">Set Folder</button>
+                        </span>
+                    </div>
+                    <div id="customBaseError" class="alert alert-danger" style="display: none;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="fileUpload"><strong>Upload File (CSV or TXT):</strong></label>
+                    <div class="input-group">
+                        <input type="file" class="form-control" id="fileUpload" accept=".csv,.txt">
+                        <span class="input-group-btn">
+                            <button class="btn btn-primary" onclick="uploadFile()">Upload</button>
+                            <button class="btn btn-info" onclick="parseUploadedFile()">Parse File</button>
+                        </span>
+                    </div>
+                </div>
+
+                <div id="customCheckboxes" class="checkbox-group"></div>
+                <button class="btn btn-success" onclick="saveSelections('custom')">Save Selections</button>
+                <span id="customSaveMessage" class="text-success"></span>
+
+                <div class="hint-section">
+                    <button class="btn btn-default" onclick="showHint()">Show Format Hint</button>
+                    <div id="hintSection" class="well" style="display: none;">
+                        <pre>Format as below, either CSV or TXT file:
+Sample_name,read1,read2
+sampleS2_20252211_L001,sampleS2_20252211_L001_fastp_1.fastq,sampleS2_20252211_L001_fastp_2.fastq
+sampleS3_20252211_L001,sampleS3_20252211_L001_fastp_1.fastq,sampleS3_20252211_L001_fastp_2.fastq</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workflow Selection Section -->
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h3 class="panel-title">Workflow Selection</h3>
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <label for="yamlCategoryDropdown"><strong>Select YAML File Type:</strong></label>
+                <select class="form-control" id="yamlCategoryDropdown" onchange="fetchYamlFilesByType()">
+                    <option value="">-- Select YAML Type --</option>
+                    <option value="DNA">DNA</option>
+                    <option value="RNA">RNA</option>
+                    <option value="Others">Others</option>
+                </select>
+            </div>
+
+            <!-- YAML Files Section - Initially Hidden -->
+            <div id="yamlFilesSection" style="display: none;">
+                <div id="yamlFilesList" class="radio-group"></div>
+                <div class="btn-group">
+                    <button class="btn btn-info" onclick="downloadSelectedFile()">Download</button>
+                    <button class="btn btn-success" onclick="selectYamlFile()">Select</button>
+                </div>
+                <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="yamlUpload"><strong>Upload YAML File:</strong></label>
+                <div class="input-group">
+                    <input type="file" class="form-control" id="yamlUpload" accept=".yml,.yaml">
+                    <span class="input-group-btn">
+                        <button class="btn btn-primary" onclick="uploadYamlFile()">Upload</button>
+                    </span>
+                </div>
+                <p id="uploadError" class="text-danger" style="display: none;"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Form -->
+    <form id="dagForm" method="POST" action="/dnaseqbaseview/" class="form-horizontal">
+        <input type="hidden" name="email_address" id="email_address_input">
+        <input type="hidden" name="selected_items" id="selected_items_input">
+        <input type="hidden" name="base_path" id="base_path_input">
+        <input type="hidden" id="selected_workflow_input" name="selected_workflow">
+        <button type="submit" class="btn btn-lg btn-primary">Submit DAG</button>
+        <div id="submitError" class="alert alert-danger" style="display: none;"></div>
+    </form>
+</div>
+
+<style>
+.panel {
+    margin-bottom: 30px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.selection-section {
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.checkbox-group, .radio-group {
+    margin: 15px 0;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.hint-section {
+    margin-top: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.btn-group {
+    margin: 10px 0;
+}
+
+.alert {
+    margin-top: 10px;
+}
+</style>
+
+<script>
+
+    function toggleSelection(mode) {
+        console.log("Switching mode to:", mode); // Debugging log
+
+        const foldersSection = document.getElementById("foldersSection");
+        const customSection = document.getElementById("customSection");
+
+        if (mode === "folders") {
+            foldersSection.style.display = "block";
+            customSection.style.display = "none";
+        } else if (mode === "files") {
+            foldersSection.style.display = "none";
+            customSection.style.display = "block";
+        }
+    }
+
+    function updateSelectedWorkflow(value) {
+        document.getElementById("selected_workflow_input").value = value;
+    }
+
+    function validateAndSubmit(event) {
+        event.preventDefault();
+
+        let basePath = "";
+        if (document.getElementById("foldersSection").style.display !== "none") {
+            basePath = document.getElementById("basePath").value.trim();
+        } else if (document.getElementById("customSection") && document.getElementById("customSection").style.display !== "none") {
+            basePath = document.getElementById("customBasePath").value.trim();
+        }
+
+        let selectedSamples = document.querySelectorAll("input[type='checkbox']:checked");
+        let selectedWorkflow = document.getElementById("selected_workflow_input").value;
+        let submitError = document.getElementById("submitError");
+        let emailAddressField = document.getElementsByName("email_address")[0];
+        let emailAddress = emailAddressField ? emailAddressField.value.trim() : "";
+
+        if (!emailAddress) {
+            submitError.textContent = "Email address is required.";
+            submitError.style.display = "block";
+            return;
+        }
+
+        if (!basePath) {
+            submitError.textContent = "Base path is required.";
+            submitError.style.display = "block";
+            return;
+        }
+
+        if (selectedSamples.length === 0) {
+            submitError.textContent = "You must select at least one sample.";
+            submitError.style.display = "block";
+            return;
+        }
+
+        if (!selectedWorkflow) {
+            submitError.textContent = "You must either select a YAML file or upload one.";
+            submitError.style.display = "block";
+            return;
+        }
+
+        submitError.style.display = "none";
+        document.getElementById("dagForm").submit();
+    }
+
+    // Attach validation function to form submission
+    document.getElementById("dagForm").addEventListener("submit", validateAndSubmit);
+
+
+    function fetchYamlFilesByType() {
+        const category = document.getElementById("yamlCategoryDropdown").value;
+        const yamlFilesSection = document.getElementById("yamlFilesSection");
+        const list = document.getElementById('yamlFilesList');
+        
+        // Reset and hide section if no category selected
+        if (!category) {
+            yamlFilesSection.style.display = "none";
+            list.innerHTML = "";
+            return;
+        }
+
+        // Show the section when a category is selected
+        yamlFilesSection.style.display = "block";
+
+        fetch('/list_yaml_files')
+            .then(res => res.json())
+            .then(data => {
+                let files = data[category] || [];
+
+                if (files.length === 0) {
+                    list.innerHTML = "<p>No YAML files found for this category.</p>";
+                    return;
+                }
+
+                list.innerHTML = files.map(f => `<input type='radio' name='yamlFile' value='${f}'> ${f}<br>`).join('');
+            })
+            .catch(() => {
+                list.innerHTML = "<p>Error loading YAML files.</p>";
+            });
+    }
+
+
+    function downloadSelectedFile() {
+        let selected = document.querySelector('input[name="yamlFile"]:checked');
+        let errorContainer = document.getElementById('errorContainer');
+
+        if (!selected) {
+            errorContainer.textContent = "Please select a YAML file to download.";
+            errorContainer.style.display = "block";
+            return;
+        }
+
+        // Store selected YAML file in hidden input
+        updateSelectedWorkflow(selected.value);
+
+        fetch('/download_yaml', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: selected.value })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.error || "Download failed"); });
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                let url = window.URL.createObjectURL(blob);
+                let a = document.createElement('a');
+                a.href = url;
+                a.download = selected.value;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                errorContainer.textContent = "Failed to download file: " + error.message;
+                errorContainer.style.display = "block";
+            });
+    }
+
+
+    function uploadYamlFile() {
+        const fileInput = document.getElementById("yamlUpload");
+        const uploadError = document.getElementById("uploadError");
+        let basePath = "";
+
+        if (document.getElementById("foldersSection").style.display !== "none") {
+            basePath = document.getElementById("basePath").value.trim();
+        } else if (document.getElementById("customSection").style.display !== "none") {
+            basePath = document.getElementById("customBasePath").value.trim();
+        }
+
+        if (!fileInput.files.length) {
+            uploadError.textContent = "Please select a file to upload.";
+            uploadError.style.display = "block";
+            return;
+        }
+
+        if (!basePath) {
+            uploadError.textContent = "Please enter a base path before uploading.";
+            uploadError.style.display = "block";
+            return;
+        }
+
+        const file = fileInput.files[0];
+
+        // Store uploaded YAML file in hidden input
+        updateSelectedWorkflow(file.name);
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("base_path", basePath);
+
+        fetch('/upload_yaml', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(result => {
+                if (result.error) {
+                    uploadError.textContent = result.error;
+                    uploadError.style.display = "block";
+                } else {
+                    uploadError.style.color = "green";
+                    uploadError.textContent = `Upload successful to: ${basePath}/${file.name}`;
+                    uploadError.style.display = "block";
+                }
+            })
+            .catch(() => {
+                uploadError.textContent = "Upload failed. Try again.";
+                uploadError.style.display = "block";
+            });
+    }
+
+
+    function selectYamlFile() {
+        let selected = document.querySelector('input[name="yamlFile"]:checked');
+        let errorContainer = document.getElementById('errorContainer');
+        let basePath = "";
+
+        if (document.getElementById("foldersSection").style.display !== "none") {
+            basePath = document.getElementById("basePath").value.trim();
+        } else if (document.getElementById("customSection") && document.getElementById("customSection").style.display !== "none") {
+            basePath = document.getElementById("customBasePath").value.trim();
+        }
+
+        if (!selected) {
+            errorContainer.textContent = "Please select a YAML file to copy.";
+            errorContainer.style.display = "block";
+            return;
+        }
+
+        if (!basePath) {
+            errorContainer.textContent = "Please enter a base path before selecting.";
+            errorContainer.style.display = "block";
+            return;
+        }
+
+        updateSelectedWorkflow(selected.value);
+
+        fetch('/select_yaml', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: selected.value, base_path: basePath })
+        })
+            .then(response => response.json())
+            .then(result => {
+
+                if (result.error) {
+                    errorContainer.textContent = result.error;
+                    errorContainer.style.display = "block";
+                } else {
+                    errorContainer.style.color = "green";
+                    errorContainer.textContent = result.message;
+                    errorContainer.style.display = "block";
+                }
+            })
+            .catch(() => {
+                errorContainer.textContent = "Selection failed. Try again.";
+                errorContainer.style.display = "block";
+            });
+    }
+
+
+
+    // Ensure "Default" mode is selected on page load
+    document.addEventListener("DOMContentLoaded", function () {
+        toggleSelection("folders");
+    });
+
+    function toggleSelectAll(selectAll) {
+        document.querySelectorAll('.itemCheckbox').forEach(cb => cb.checked = selectAll.checked);
+    }
+
+    async function listFolders() {
+        const basePathInput = document.getElementById("basePath"),
+            errorMessage = document.getElementById("errorMessage"),
+            defaultCheckboxes = document.getElementById("defaultCheckboxes"),
+            folderResults = document.getElementById("folderResults");
+
+        // Reset display
+        errorMessage.textContent = "";
+        errorMessage.style.display = "none";
+        defaultCheckboxes.innerHTML = "";
+        folderResults.style.display = "none";
+
+        let basePath = basePathInput.value.trim();
+
+        if (!basePath) {
+            errorMessage.textContent = "Please enter a base path.";
+            errorMessage.style.display = "block";
+            folderResults.style.display = "block";
+            return;
+        }
+
+        try {
+            const res = await fetch("/listdir", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ base_path: basePath }),
+            });
+
+            const data = await res.json();
+
+            // Show results section
+            folderResults.style.display = "block";
+
+            // Update frontend input with backend-corrected base_path
+            if (data.base_path) {
+                basePathInput.value = data.base_path;
+            }
+
+            if (!data.folder_names || data.folder_names.length === 0) {
+                errorMessage.textContent = data.message || "The mentioned path doesn't exist.";
+                errorMessage.style.display = "block";
+                return;
+            }
+
+            document.getElementById("base_path_input").value = data.base_path;
+
+            defaultCheckboxes.innerHTML = data.folder_names.map(f =>
+                `<input type="checkbox" class="itemCheckbox" value="${f}"><label>${f}</label><br>`
+            ).join("");
+
+            if (data.folder_names.length > 1) {
+                defaultCheckboxes.insertAdjacentHTML("afterbegin", `
+                <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                <label for="selectAll">Select All</label><br>
+            `);
+            }
+        } catch {
+            errorMessage.textContent = "Error fetching folders. Please check the base path.";
+            errorMessage.style.display = "block";
+            folderResults.style.display = "block";
+        }
+    }
+
+
+
+    function saveSelections(mode) {
+        if (!mode) return;
+
+        const checkboxes = document.querySelectorAll(`#${mode}Checkboxes .itemCheckbox:checked`),
+            selectedItems = [...checkboxes].map(cb => cb.value),
+            saveMessage = document.getElementById(mode === "default" ? "saveMessage" : "customSaveMessage");
+
+        if (!saveMessage) return;
+
+        document.getElementById('selected_items_input').value = selectedItems.join(',');
+        saveMessage.textContent = selectedItems.length ? "Selection saved successfully!" : "Please select at least one item.";
+        saveMessage.style.color = selectedItems.length ? "green" : "red";
+        document.getElementById('submitError').style.display = "none";
+    }
+    document.getElementById("dagForm").addEventListener("submit", function (event) {
+        const selectedItems = document.getElementById("selected_items_input").value,
+            submitError = document.getElementById("submitError");
+
+        if (!selectedItems) {
+            event.preventDefault();
+            submitError.textContent = "Sample Selection is a must to proceed to submit analysis.";
+            submitError.style.display = "block";
+        }
+    });
+
+
+    async function Savefile() {
+        const basePath = document.getElementById("customBasePath").value.trim(),
+            fileBaseError = document.getElementById("customBaseError"),
+            basePathInput = document.getElementById("base_path_input");
+
+        fileBaseError.textContent = "";
+        fileBaseError.style.display = "none";
+
+        if (!basePath) {
+            fileBaseError.textContent = "Please enter a valid folder path.";
+            fileBaseError.style.display = "block";
+            fileBaseError.style.color = "red";
+            return;
+        }
+
+        try {
+            const res = await fetch("/validate_base_path", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ base_path: basePath }),
+            });
+
+            const data = await res.json();
+            fileBaseError.textContent = data.message;
+            fileBaseError.style.color = data.status === "success" ? "green" : "red";
+            fileBaseError.style.display = "block";
+
+            if (data.status === "success")
+                basePathInput.value = basePath;
+        } catch {
+            fileBaseError.textContent = "Error validating base path. Please try again.";
+            fileBaseError.style.color = "red";
+            fileBaseError.style.display = "block";
+        }
+    }
+
+
+
+    async function uploadFile() {
+        const fileInput = document.getElementById("fileUpload"),
+            fileBaseError = document.getElementById("customBaseError"),
+            basePath = document.getElementById("customBasePath").value.trim(),
+            basePathInput = document.getElementById("base_path_input"); // ✅ Ensures base_path is stored
+
+        fileBaseError.textContent = "";
+        fileBaseError.style.display = "none";
+
+        if (!basePath) {
+            fileBaseError.textContent = "Please enter a valid base path before uploading.";
+            fileBaseError.style.display = "block";
+            fileBaseError.style.color = "red";
+            return;
+        }
+
+        if (fileInput.files.length === 0) {
+            fileBaseError.textContent = "Please select a file to upload.";
+            fileBaseError.style.display = "block";
+            fileBaseError.style.color = "red";
+            return;
+        }
+
+        const file = fileInput.files[0];
+        if (!file.name.endsWith(".txt") && !file.name.endsWith(".csv")) {
+            fileBaseError.textContent = "Only .txt and .csv files are allowed.";
+            fileBaseError.style.display = "block";
+            fileBaseError.style.color = "red";
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("base_path", basePath);
+
+        try {
+            const res = await fetch("/upload_file", { method: "POST", body: formData }),
+                data = await res.json();
+
+            fileBaseError.textContent = data.message;
+            fileBaseError.style.color = data.status === "success" ? "green" : "red";
+            fileBaseError.style.display = "block";
+
+            if (data.status === "success")
+                basePathInput.value = basePath;
+        } catch {
+            fileBaseError.textContent = "Error uploading file. Please try again.";
+            fileBaseError.style.color = "red";
+            fileBaseError.style.display = "block";
+        }
+    }
+
+    async function parseUploadedFile() {
+        const errorMsg = document.getElementById("customBaseError"),
+            basePath = document.getElementById("customBasePath").value.trim(),
+            fileInput = document.getElementById("fileUpload"),
+            checkboxesDiv = document.getElementById("customCheckboxes");
+
+        errorMsg.textContent = "";
+        errorMsg.style.display = "none";
+        checkboxesDiv.innerHTML = "";
+        checkboxesDiv.style.display = "none"; // Hide by default when clearing content
+
+        if (!basePath || fileInput.files.length === 0) {
+            errorMsg.textContent = !basePath ? "Please enter a valid base path." : "Please upload a file first.";
+            errorMsg.style.display = "block";
+            errorMsg.style.color = "red";
+            return;
+        }
+
+        try {
+            const res = await fetch("/parse_uploaded_file", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ base_path: basePath, file_name: fileInput.files[0].name }),
+            });
+
+            const data = await res.json();
+            if (data.status !== "success" || data.sample_names.length === 0) throw new Error(data.message || "No valid samples found.");
+
+            checkboxesDiv.innerHTML = `<input type="checkbox" id="selectAllCustom" onchange="toggleSelectAll(this, 'custom')">
+                                   <label for="selectAllCustom">Select All</label><br>` +
+                data.sample_names.map(sample =>
+                    `<input type="checkbox" class="itemCheckbox" value="${sample}"><label>${sample}</label><br>`
+                ).join("");
+
+            checkboxesDiv.style.display = "block"; // Only show when there's content
+        } catch {
+            errorMsg.textContent = "Error parsing file. Please try again.";
+            errorMsg.style.display = "block";
+            errorMsg.style.color = "red";
+        }
+    }
+
+
+    function showHint() {
+        const hintSection = document.getElementById('hintSection');
+        hintSection.style.display = hintSection.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function validateEmailInput() {
+    const emailInput = document.getElementById("email_address");
+    const emailError = document.getElementById("emailError");
+    const emailHidden = document.getElementById("email_address_input");
+    const emailValue = emailInput.value.trim();
+
+    if (!emailValue) {
+        emailError.textContent = "Email address is required.";
+        emailError.style.display = "block";
+        emailHidden.value = "";
+        return;
+    }
+
+    fetch("/validate_email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email_address: emailValue })
+    })
+    .then(res => res.json().then(data => ({ ok: res.ok, data })))
+    .then(({ ok, data }) => {
+        if (!ok) {
+            emailError.textContent = data.message;
+            emailError.style.color = "red";
+            emailError.style.display = "block";
+            emailHidden.value = "";
+        } else {
+            emailError.textContent = "Email is valid.";
+            emailError.style.color = "green";
+            emailError.style.display = "block";
+            emailHidden.value = emailValue;
+        }
+    })
+    .catch(() => {
+        emailError.textContent = "Error validating email.";
+        emailError.style.color = "red";
+        emailError.style.display = "block";
+        emailHidden.value = "";
+    });
+}
+
+
+</script>
+
+
+
+{% include 'appbuilder/flash.html' %}
+{% endblock %}
+
+{% block footer %}
+{% if not current_user.is_anonymous %}
+<footer class="footer">
+    <div class="container">
+        <div>
+            Version: {% if airflow_version %}<a href="https://pypi.python.org/pypi/apache-airflow/{{ airflow_version }}"
+                target="_blank">v{{ airflow_version }}</a>{% else %} N/A{% endif %}
+            {% if git_version %}<br>Git Version: <strong>{{ git_version }}</strong>{% endif %}
+        </div>
+    </div>
+</footer>
+{% endif %}
+{% endblock %}
+
+{% block tail_js %}
+{{ super() }}
+<script>
+    var Airflow = {
+        serverTimezone: '{{ server_timezone }}',
+        defaultUITimezone: '{{ default_ui_timezone }}',
+    };
+    var hostName = '{{ hostname }}';
+    var csrfToken = '{{ csrf_token() }}';
+    $('time[title]').tooltip();
+</script>
+<script src="{{ url_for_asset('moment.js') }}"></script>
+<script src="{{ url_for_asset('main.js') }}"></script>
+<script src="{{ url_for_asset('bootstrap-datetimepicker.min.js') }}"></script>
+<script src="{{ url_for_asset('bootstrap3-typeahead.min.js') }}"></script>
+{% endblock %}
