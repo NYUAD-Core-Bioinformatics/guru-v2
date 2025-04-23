@@ -1,8 +1,14 @@
-# Guru Downstream Analysis Instance
+# Guru Downstream Analysis Instance ( Guru-v2)
 
 ## Overview
 
-**Guru** is a downstream analysis platform that can be deployed quickly using Docker. This guide will help you install and configure the instance locally or on a server.
+**Guru-v2** is a downstream analysis platform that can be deployed quickly using Docker. This guide will help you install and configure the instance locally or on a server.
+
+This setup comes with ```Default``` and ```Custom``` based views for processing and submitting slurm jobs using Biosails. 
+
+With ```Default``` view, the working directory expects this ```/scratch/<net-id>/Some-dir/UnAligned/data/processed``` directory structure. 
+
+With ```Custom``` it can be anywhere on your working directory. This is still inprogress. 
 
 ---
 
