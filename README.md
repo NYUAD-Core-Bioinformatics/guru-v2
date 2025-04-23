@@ -21,7 +21,7 @@ The easiest way to get started is by using [Docker](https://www.docker.com/).
 ```bash
 git clone https://github.com/NYUAD-Core-Bioinformatics/guru-v2
 cd guru-v2
-
+```
 
 #### Setting up the environment
 
