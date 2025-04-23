@@ -42,14 +42,12 @@ downstream_analysis_task = PythonOperator(
 
 email_pre_sent_task = PythonOperator(
      task_id='email_pre_sent',
-     retries=1,
      python_callable=generate_pre_email_task,
      dag=dag
 )
 
 email_post_sent_task = PythonOperator(
      task_id='email_post_sent',
-     retries=1,
      python_callable=generate_post_email_task,
      dag=dag
 )

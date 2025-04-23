@@ -27,11 +27,11 @@ cd guru-v2
 
 Before starting the application, update connection parameters for SSH and email authentication:
 
-    Open scripts/ssh.sh and set --conn-host and --conn-login.
+Open ```scripts/ssh.sh``` and set ```--conn-host``` and ```--conn-login```.
 
-    Open scripts/email.sh and set --conn-login and --conn-password.
+Open ```scripts/email.sh``` and set ```--conn-login``` and ```--conn-password```.
 
-Generate SSH Key Pair
+#### Generate SSH Key Pair
 
 Follow this SSH key generation guide to create a key pair.
 
