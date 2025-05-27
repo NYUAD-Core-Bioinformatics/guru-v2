@@ -61,14 +61,13 @@ sh build.sh
 
 #### Accessing the Application
 
-To access the Guru User Interface [http://IP-address:8080](http://IP-address:8080)
+To access the Guru User Interface [localhost:8080](localhost:8080)
 and use the credentials **guru**/**admin**.
 
 Then navigate to ```Downstream Analysis``` button to start the analysis. 
 
 Note:- 
-- If you run this service on a server, specify the (IP-address or hostname):8080 on the browser. 
-- If you run this service on a standalone machine (e.g. laptop), specify localhost:8080 on the browser.
+- If you run this service on a server, replace the localhost with IP-address or hostname on the browser. 
 
 
 To delete the guru instance completely from your computer. 
@@ -76,3 +75,6 @@ To delete the guru instance completely from your computer.
 ``` bash 
 sh prune.sh
 ```
+
+Note:- To modify ssh configuration, then select Admin -> Connections.
+Click on edit button beside ```guru_ssh```. Then update the information and Click save. 
