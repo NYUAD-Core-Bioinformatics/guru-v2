@@ -61,7 +61,7 @@ sh build.sh
 
 #### Accessing the Application
 
-To access the Guru User Interface [localhost:8080](localhost:8080)
+To access the Guru User Interface [***localhost:8080***](localhost:8080)
 and use the credentials **guru**/**admin**.
 
 Then navigate to ```Downstream Analysis``` button to start the analysis. 
