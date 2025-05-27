@@ -62,7 +62,7 @@ sh build.sh
 #### Accessing the Application
 
 To access the Guru User Interface [http://IP-address:8080](http://IP-address:8080)
-and use the credentials **airflow**/**airflow**.
+and use the credentials **guru**/**admin**.
 
 Then navigate to ```Downstream Analysis``` button to start the analysis. 
 
