@@ -2,9 +2,14 @@
 #############################################################################
 # To build image, followed by starting containers.
 ############################################################################
+echo "==========================="
+echo "Guru setup is completed now"
+echo "==========================="
 docker compose up --build -d 
-sleep 60
+sleep 10
 echo "Wait for few seconds"
 docker compose restart
-echo "Guru setup is completed now"
-echo "Check for access instruction in github page"
+sleep 10
+echo "==========================="
+echo "Guru setup is completed now, Copy localhost:8080 in browser."
+echo "==========================="

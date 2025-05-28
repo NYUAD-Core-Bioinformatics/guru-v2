@@ -27,7 +27,7 @@ ssh_hook.no_host_key_check = True
 
 
 bash_task = BashOperator(
-    task_id="print_selected_items",
+    task_id="Display_sample_selection",
     bash_command='echo "Selected files: {{ dag_run.conf["selected_items"] }} and Workflow as: {{ dag_run.conf["selected_workflow"] }}"',
     dag=dag,
 )
