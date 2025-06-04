@@ -52,7 +52,7 @@ Note:- For windows users, copy the ```id_rsa.pub``` to remote server (path: $HOM
 
 ```
 cp ~/.ssh/id_rsa keys/id_rsa
-chmod 600 keys/id_rsa
+chmod 644 keys/id_rsa
 ```
 
 Note: You can set the IP address for the Guru instance by editing the .env file.
