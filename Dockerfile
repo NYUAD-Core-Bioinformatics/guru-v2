@@ -3,7 +3,7 @@ ENV TZ=Asia/Dubai
 USER root
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN echo "alias ll='ls -lah'" >> /home/airflow/.bashrc && \
-    chown airflow: /home/airflow/.bashrc
+    chown airflow: /home/airflow
 USER airflow
 COPY img/navbar.html /home/airflow/.local/lib/python3.12/site-packages/airflow/www/templates/appbuilder/navbar.html
 COPY img/mylogo.png /home/airflow/.local/lib/python3.12/site-packages/airflow/www/static/mylogo.png
