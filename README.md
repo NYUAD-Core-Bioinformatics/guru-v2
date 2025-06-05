@@ -55,7 +55,7 @@ cp ~/.ssh/id_rsa keys/id_rsa
 chmod 644 keys/id_rsa
 ```
 
-Note: You can set the IP address for the Guru instance by editing the .env file.
+Note: If you run guru on server or cloud. Replace ```AIRFLOW_URL=localhost``` to IP address from ```.env``` file.
  
 #### 6. Building the Application 
 
@@ -83,12 +83,33 @@ docker compose restart
 To access the Guru User Interface [***localhost:8080***](localhost:8080)
 and use the credentials **guru**/**admin**.
 
-Then navigate to ```Downstream Analysis``` button to start the analysis. 
-
-In the Default section, you need to maintain the directory structure as ```UnAligned/data/processed``` and put the QC/QT under processed folder.
-
 Note:- 
 - If you run this service on a server, replace the localhost with IP-address or hostname on the browser. 
+
+Then navigate to ```Downstream Analysis``` button to begin with the analysis. 
+
+Guru classified the downstream analysis into two selections.
+
+1) Default Section
+
+Maintain the directory structure as ```UnAligned/data/processed``` in the base path and put the QC/QT fastq under processed folder.
+For eg:- if you set the base path as ```/scratch/user1/nextseq/20922123``` then the followed fastq folders present after this base path followed by ```/scratch/user1/nextseq/20922123/UnAligned/data/processed/sample1/fastp```, ```/scratch/user1/nextseq/20922123/UnAligned/data/processed/sample2/fastp` etc..
+
+2. Custom Section
+
+Place all the fastq files in the base path excluding the folder structure. 
+For eg:- if you set the base path as ```/scratch/user1/nextseq/20922123``` then the fastq files present just inside the basepath by ```/scratch/user1/nextseq/20922123/sampleS2_20252211_L001_fastp_read1.fastq```,```/scratch/user1/nextseq/20922123/sampleS2_20252211_L001_fastp_read2.fastq``` etc.
+
+Then you should provide us the sample metadata in ```.csv``` or ```.txt``` file format.
+
+Below is an example and we expect the sample names with read1 and read2 in the below format
+
+```
+Sample_name,read1,read2
+sampleS2_20252211_L001,sampleS2_20252211_L001_fastp_read1.fastq.gz,sampleS2_20252211_L001_fastp_read2.fastq.gz
+sampleS3_20252211_L001,sampleS3_20252211_L001_fastp_read1.fastq.gz,sampleS3_20252211_L001_fastp_read2.fastq.gz
+```
+
 
 
 To delete the guru instance completely from your computer. 
