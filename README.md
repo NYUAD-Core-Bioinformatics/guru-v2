@@ -4,11 +4,11 @@
 
 **Guru-v2** is a downstream analysis platform that can be deployed quickly using Docker. This guide will help you install and configure the instance locally or on a server.
 
-This setup comes with ```Default``` and ```Custom``` based views for processing and submitting slurm jobs using Biosails. 
+This setup supports two processing modes ```Default``` and ```Custom``` both designed for submitting SLURM jobs using BioSAILs.. 
 
-With ```Default``` view, the working directory expects this ```/scratch/<net-id>/Some-dir/UnAligned/data/processed``` directory structure. 
+With ```Default``` view, the working directory expects this ```/scratch/user1/dir1/UnAligned/data/processed``` directory structure. 
 
-With ```Custom``` it can be anywhere on your working directory. This is still inprogress. 
+With ```Custom``` view, the working directory can be flexible.
 
 ---
 
@@ -47,19 +47,26 @@ Open ```scripts/email.sh``` and set ```--conn-login``` and ```--conn-password```
 
 Follow this [SSH key generation](https://www.ssh.com/academy/ssh/keygen) guide to create a key pair.
 
-Copy the public key (id_rsa.pub) to your remote server (path: $HOME/.ssh/id_rsa.pub), and place the private key (id_rsa) in the keys directory.
-Note:- For windows users, copy the ```id_rsa.pub``` to remote server (path: $HOME/.ssh/id_rsa.pub) using ```filezilla/winscp``` GUI application. Then place ```id_rsa``` to ```keys``` folder.
+Copy the public key ```id_rsa.pub``` to your remote server.
+```
+$HOME/.ssh/id_rsa.pub
+```
 
+Move the private key ```id_rsa``` to the ```keys/``` directory:
 ```
 cp ~/.ssh/id_rsa keys/id_rsa
 chmod 644 keys/id_rsa
 ```
 
-Note: If you run guru on server or cloud. Replace ```AIRFLOW_URL=localhost``` to IP address from ```.env``` file.
- 
-#### 6. Building the Application 
+    Note (Windows users):
+    Use a GUI tool like FileZilla or WinSCP to copy id_rsa.pub to the remote server, and place id_rsa in the keys/ folder locally.
 
-Run the following script to start the Guru instance (initialization may take ~5 minutes):
+    Note:
+    If you're running Guru on a server or cloud, replace AIRFLOW_URL=localhost with your server's IP address in the .env file.
+
+#### 6. Build the Application 
+
+Start the Guru instance using the following scripts. Initialization may take ~5 minutes.
 
 For Linux/MacOSX:
 
@@ -80,43 +87,98 @@ docker compose restart
 
 #### 7. Accessing the Application
 
-To access the Guru User Interface [***localhost:8080***](localhost:8080)
-and use the credentials **guru**/**admin**.
+To access the Guru User Interface, visit [***localhost:8080***](localhost:8080)
+Use the credentials **guru**/**admin**.
 
-Note:- 
-- If you run this service on a server, replace the localhost with IP-address or hostname on the browser. 
+> **Note:**  
+> If you run this service on a server, replace `localhost` with the server's IP address or hostname in your browser.
 
 Then navigate to ```Downstream Analysis``` button to begin with the analysis. 
 
-Guru classified the downstream analysis into two selections.
+#### 8. Running a Downstream Analysis
 
-1) Default Section
+Guru classifies downstream analysis into two options:
 
-Maintain the directory structure as ```UnAligned/data/processed``` in the base path and put the QC/QT fastq under processed folder.
-For eg:- if you set the base path as ```/scratch/user1/nextseq/20922123``` then the followed fastq folders present after this base path followed by ```/scratch/user1/nextseq/20922123/UnAligned/data/processed/sample1/fastp```, ```/scratch/user1/nextseq/20922123/UnAligned/data/processed/sample2/fastp` etc..
+##### 1) Default Section
 
-2. Custom Section
+Maintain the directory structure as:
+```
+UnAligned/data/processed
+```
+Place the QC/QT ```fastq``` files under the ```processed``` folder.
 
-Place all the fastq files in the base path excluding the folder structure. 
-For eg:- if you set the base path as ```/scratch/user1/nextseq/20922123``` then the fastq files present just inside the basepath by ```/scratch/user1/nextseq/20922123/sampleS2_20252211_L001_fastp_read1.fastq```,```/scratch/user1/nextseq/20922123/sampleS2_20252211_L001_fastp_read2.fastq``` etc.
+Example:
+If you set the base path as:
+```
+/scratch/user1/nextseq/20922123
+```
 
-Then you should provide us the sample metadata in ```.csv``` or ```.txt``` file format.
+Then the ```fastq``` folders should be located as:
+```
+/scratch/user1/nextseq/20922123/UnAligned/data/processed/sample1/fastp
+/scratch/user1/nextseq/20922123/UnAligned/data/processed/sample2/fastp
+```
 
-Below is an example and we expect the sample names with read1 and read2 in the below format
+Once you set the base path and click List folders, you'll be able to select samples to proceed with the analysis.
 
+
+##### 2. Custom Section
+
+Place all fastq files directly under the base path (without any folder structure).
+
+Example:
+If you set the base path as:
+```
+/scratch/user1/nextseq/20922123
+```
+
+Then the ```fastq``` files should be directly inside that folder, such as:
+```
+/scratch/user1/nextseq/20922123/sampleS2_20252211_L001_fastp_read1.fastq.gz
+/scratch/user1/nextseq/20922123/sampleS2_20252211_L001_fastp_read2.fastq.gz
+```
+
+You should also provide the sample metadata in ```.csv``` or ```.txt``` format.
+
+Below is an example format. The file should list sample names along with their corresponding ```read1``` and ```read2``` file names:
 ```
 Sample_name,read1,read2
 sampleS2_20252211_L001,sampleS2_20252211_L001_fastp_read1.fastq.gz,sampleS2_20252211_L001_fastp_read2.fastq.gz
 sampleS3_20252211_L001,sampleS3_20252211_L001_fastp_read1.fastq.gz,sampleS3_20252211_L001_fastp_read2.fastq.gz
 ```
 
+Once uploaded, you’ll be able to select the samples and proceed with the analysis.
 
 
-To delete the guru instance completely from your computer. 
+To delete the Guru instance completely from your computer:
 
 ``` bash 
 sh prune.sh
 ```
 
-Note:- To modify ssh configuration, then select Admin -> Connections.
-Click on edit button beside ```guru_ssh```. Then update the information and Click save. 
+#### To Modify the SSH Configuration:
+
+1. Go to **Admin → Connections**
+2. Click the **Edit** button next to `guru_ssh`
+3. Update the necessary details
+4. Click **Save**
+
+
+### Contact
+
+If you need to contact us for feedback, queries, or to raise an issue, you can do so using the issues page [Github issue](https://github.com/NYUAD-Core-Bioinformatics/guru-v2/issues).
+
+### Citation
+
+If you use GURU in your research or publications, please cite our [Github page](https://github.com/NYUAD-Core-Bioinformatics/guru-v2).
+
+### Acknowledgements
+
+This work was supported by Tamkeen under the NYU Abu Dhabi Research Institute Award to the NYUAD Center for Genomics and Systems Biology (ADHPG-CGSB). We would also like to acknowledge the High Performance Computing department at NYU Abu Dhabi for the computational resources and their continuous support.
+
+### Other Useful Links
+
+- [CGSB Webpage](https://cgsb.abudhabi.nyu.edu) : for news and updates
+- [BioSAILs](https://www.biorxiv.org/content/biorxiv/early/2019/01/02/509455.full.pdf)
+- [Airflow](https://airflow.apache.org/) 
+- [Docker](https://www.docker.com/)
