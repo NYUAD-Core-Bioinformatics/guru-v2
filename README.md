@@ -75,7 +75,7 @@ Note:- Remove the whitespace from the app password.
 
 
 
-#### 6. Build the Application 
+#### 5. Build the Application 
 
 Start the Guru instance using the following scripts. Initialization may take ~5 minutes.
 
@@ -96,7 +96,7 @@ sh scripts/email.sh
 docker compose restart
 ```
 
-#### 7. Accessing the Application
+#### 6. Accessing the Application
 
 To access the Guru User Interface, visit [***localhost:8080***](localhost:8080)
 Use the credentials **guru**/**admin**.
@@ -106,7 +106,7 @@ Use the credentials **guru**/**admin**.
 
 Then navigate to ```Downstream Analysis``` button to begin with the analysis. 
 
-#### 8. Running a Downstream Analysis
+#### 7. Running a Downstream Analysis
 
 Guru classifies downstream analysis into two options:
 
