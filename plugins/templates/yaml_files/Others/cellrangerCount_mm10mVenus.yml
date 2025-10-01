@@ -2,7 +2,8 @@
 global:
     # ROOT Directory configurations
     - indir: ./
-    - outdir: ./
+    - user_dir: {variable_from_guru}
+    - outdir: {variable_from_guru}
     - root_in_dir: ./
     # Find Samples
     - sample_rule: (.*)$
@@ -13,10 +14,8 @@ global:
     #HPC Directives
     - HPC:
        - module: 'gencore gencore_biosails'
-       - partition: 'serial'
        - commands_per_node: 1
        - cpus_per_task: 1
-       - account: 'gencore'
 rules:
     - cellranger_count:
         local:
@@ -34,4 +33,5 @@ rules:
             --transcriptome={$self->REFERENCE} \
             --jobmode=local \
             --localcores=24 \
-            --localmem=118
+            --localmem=118 \
+            --output-dir={$self->outdir}

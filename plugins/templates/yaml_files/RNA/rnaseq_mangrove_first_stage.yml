@@ -1,39 +1,39 @@
 ---
 global:
   - indir: data/processed
-  - outdir: data/analysis
-  - hisat_align: 'data/analysis/{$sample}/samtools_sort/{$sample}_hisat2.sorted.bam'
-  - sample_rule: (afh.*)
+  - outdir: {variable from guru}
+  - user_dir: {variable_from_guru}
+  - hisat_align: '{$self->user_dir}/{$sample}/samtools_sort/{$sample}_hisat2.sorted.bam'
+  - sample_rule: (.*)$
   - by_sample_outdir: '1'
   - find_by_dir: '1'
-  - jira_ticket: "NCB-906-x"
+  - jira_ticket: "ticket-num"
   - root_in_dir: "data/processed"
-  - root_out_dir: "data/analysis"
+  - root_out_dir: "{$self->user_dir}"
+  - analysis_dir: "{$self->user_dir}"
   - fastp_dir: "{$self->root_in_dir}/{$sample}/fastp"
   - TR1: "{$self->fastp_dir}/{$sample}_fastp_read1.fastq.gz"
   - TR2: "{$self->fastp_dir}/{$sample}_fastp_read2.fastq.gz"
-  - analysis_dir: data/analysis/
   - REFERENCE: '/scratch/gencore/nextseq/241010_NB551229_0026_AHWFLLBGXT/Unaligned/Amar'
   - ANNOTATION: '/scratch/gencore/nextseq/241010_NB551229_0026_AHWFLLBGXT/Unaligned/Amar.filtered.gtf'
   - HPC:
       - module: gencore gencore_rnaseq gencore_biosails
       - commands_per_node: '1'
       - cpus_per_task: '1'
-      - account: 'gencore'
 rules:
   - hisat2:
       local:
         - OUTPUT: '{$self->outdir}/{$sample}_hisat2.sam'
         - HPC:
-            - walltime: '08:00:00'
-            - mem: 100GB
-            - cpus_per_task: '28'
+            - walltime: '03:00:00'
+            - mem: 30GB
+            - cpus_per_task: '8'
       process: |
         #TASK tags={$sample}
         hisat2 \
         -x {$self->REFERENCE} \
         --dta \
-        -p 28 \
+        -p 8 \
         -1 {$self->TR1} \
         -2 {$self->TR2} \
         -S {$self->OUTPUT}
@@ -43,8 +43,8 @@ rules:
         - OUTPUT: '{$self->outdir}/{$sample}_hisat2.bam'
         - HPC:
             - deps: hisat2
-            - walltime: '06:00:00'
-            - mem: 90GB
+            - walltime: '03:00:00'
+            - mem: 30GB
             - cpus_per_task: '1'
       process: |
         #TASK tags={$sample}
@@ -55,21 +55,21 @@ rules:
         - OUTPUT: '{$self->outdir}/{$sample}_hisat2.sorted.bam'
         - HPC:
             - deps: samtools_view
-            - walltime: '08:00:00'
-            - mem: 90GB
-            - cpus_per_task: '28'
+            - walltime: '03:00:00'
+            - mem: 30GB
+            - cpus_per_task: '8'
       process: |
         #TASK tags={$sample}
-        samtools sort -@ 28 -o {$self->OUTPUT} {$self->INPUT}
+        samtools sort -@ 8 -o {$self->OUTPUT} {$self->INPUT}
   - stringtie_1:
       local:
         - INPUT: '{$self->hisat_align}'
         - OUTPUT: '{$self->outdir}/{$sample}_stringtie1.gtf'
         - HPC:
             - deps: samtools_sort
-            - walltime: '08:00:00'
-            - mem: 100GB
-            - cpus_per_task: '28'
+            - walltime: '03:00:00'
+            - mem: 30GB
+            - cpus_per_task: '8'
       process: |
         #TASK tags={$sample}
         stringtie \
@@ -77,7 +77,7 @@ rules:
         -G {$self->ANNOTATION} \
         -l {$sample} \
         -o {$self->OUTPUT} \
-        -p 28
+        -p 8
   - stringtie_merge:
       local:
         - override_process: '1'
@@ -85,8 +85,8 @@ rules:
         - OUTPUT: '{$self->outdir}/stringtie_merge.gtf'
         - HPC:
             - deps: stringtie_1
-            - walltime: '12:00:00'
-            - mem: 90GB
+            - walltime: '03:00:00'
+            - mem: 30GB
             - cpus_per_task: '1'
       process: |
         #TASK tags={$sample}

@@ -4,7 +4,7 @@
 
 **Guru-v2** is a downstream analysis platform that can be deployed quickly using Docker. This guide will help you install and configure the instance locally or on a server.
 
-This setup supports two processing modes ```Default``` and ```Custom``` both designed for submitting SLURM jobs using BioSAILs.. 
+This setup supports two processing modes ```Default``` and ```Custom``` both designed for submitting SLURM jobs using [BioSAILs](https://github.com/nizardrou/BioSAILs-WMS). 
 
 With ```Default``` view, the working directory expects this ```/scratch/user1/dir1/UnAligned/data/processed``` directory structure. 
 

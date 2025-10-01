@@ -1,39 +1,39 @@
 ---
 global:
   - indir: data/processed
-  - outdir: data/analysis_anolis
-  - hisat_align: 'data/analysis_anolis/{$sample}/samtools_sort/{$sample}_hisat2.sorted.bam'
-  - sample_rule: (ml8071.*)
+  - outdir: {variable_from_guru}
+  - user_dir: {variable_from_guru}
+  - hisat_align: '{$self->user_dir}/{$sample}/samtools_sort/{$sample}_hisat2.sorted.bam'
+  - sample_rule: (.*)$
   - by_sample_outdir: '1'
   - find_by_dir: '1'
-  - jira_ticket: "NCB-855"
+  - jira_ticket: "ticket-num"
   - root_in_dir: "data/processed"
-  - root_out_dir: "data/analysis_anolis"
+  - root_out_dir: "{$self->user_dir}"
+  - analysis_dir: "{$self->user_dir}"
   - fastp_dir: "{$self->root_in_dir}"
   - TR1: "{$self->fastp_dir}/{$sample}/fastp/{$sample}_fastp_read1.fastq.gz"
   - TR2: "{$self->fastp_dir}/{$sample}/fastp/{$sample}_fastp_read2.fastq.gz"
-  - analysis_dir: data/analysis_anolis/
   - REFERENCE: '/scratch/Reference_Genomes/Public/Vertebrate_other/Anolis_Carolinensis/AnoCar2.0/Anolis_carolinensis.AnoCar2.0v2.dna.toplevel'
   - ANNOTATION: '/scratch/Reference_Genomes/Public/Vertebrate_other/Anolis_Carolinensis/AnoCar2.0/Anolis_carolinensis.AnoCar2.0v2.110.gtf'
   - HPC:
       - module: gencore gencore_qc gencore_rnaseq gencore_biosails
       - commands_per_node: '1'
       - cpus_per_task: '1'
-      - account: 'gencore'
 rules:
   - hisat2:
       local:
         - OUTPUT: '{$self->outdir}/{$sample}_hisat2.sam'
         - HPC:
-            - walltime: '04:00:00'
-            - mem: 55GB
-            - cpus_per_task: '14'
+            - walltime: '03:00:00'
+            - mem: 30GB
+            - cpus_per_task: '8'
       process: |
         #TASK tags={$sample}
         hisat2 \
         -x {$self->REFERENCE} \
         --dta \
-        -p 14 \
+        -p 8 \
         -1 {$self->TR1} \
         -2 {$self->TR2} \
         -S {$self->OUTPUT}
@@ -43,8 +43,8 @@ rules:
         - OUTPUT: '{$self->outdir}/{$sample}_hisat2.bam'
         - HPC:
             - deps: hisat2
-            - walltime: '02:00:00'
-            - mem: 55GB
+            - walltime: '03:00:00'
+            - mem: 30GB
             - cpus_per_task: '1'
       process: |
         #TASK tags={$sample}
@@ -55,12 +55,12 @@ rules:
         - OUTPUT: '{$self->outdir}/{$sample}_hisat2.sorted.bam'
         - HPC:
             - deps: samtools_view
-            - walltime: '04:00:00'
-            - mem: 55GB
+            - walltime: '03:00:00'
+            - mem: 30GB
             - cpus_per_task: '14'
       process: |
         #TASK tags={$sample}
-        samtools sort -@ 14 -o {$self->OUTPUT} {$self->INPUT}
+        samtools sort -@ 8 -o {$self->OUTPUT} {$self->INPUT}
   - stringtie_1:
       local:
         - INPUT: '{$self->hisat_align}'
@@ -68,8 +68,8 @@ rules:
         - HPC:
             - deps: samtools_sort
             - walltime: '05:00:00'
-            - mem: 55GB
-            - cpus_per_task: '14'
+            - mem: 30GB
+            - cpus_per_task: '8'
       process: |
         #TASK tags={$sample}
         stringtie \
@@ -81,12 +81,12 @@ rules:
   - stringtie_merge:
       local:
         - override_process: '1'
-        - outdir: 'data/analysis_anolis'
+        - outdir: '{$self->out_dir}'
         - OUTPUT: '{$self->outdir}/stringtie_merge.gtf'
         - HPC:
             - deps: stringtie_1
-            - walltime: '06:00:00'
-            - mem: 90GB
+            - walltime: '03:00:00'
+            - mem: 30GB
             - cpus_per_task: '1'
       process: |
         #TASK tags={$sample}
@@ -100,9 +100,9 @@ rules:
         - INPUT: '{$self->hisat_align}'
         - HPC:
             - deps: stringtie_merge
-            - walltime: '05:00:00'
-            - mem: 55GB
-            - cpus_per_task: '14'
+            - walltime: '03:00:00'
+            - mem: 30GB
+            - cpus_per_task: '8'
       process: |
         #TASK tags={$sample}
         stringtie \
@@ -118,8 +118,8 @@ rules:
         - OUTPUT: "{$self->outdir}/{$sample}_rawCounts.txt"
         - HPC:
             - deps: samtools_sort
-            - walltime: '12:00:00'
-            - mem: '55GB'
+            - walltime: '10:00:00'
+            - mem: '50GB'
             - cpus_per_task: '1'
       process: |
         #TASK tags={$sample}
@@ -133,8 +133,8 @@ rules:
         - INPUT: "{$self->hisat_align}"
         - HPC:
             - deps: samtools_sort
-            - walltime: '08:00:00'
-            - mem: '90GB'
+            - walltime: '04:00:00'
+            - mem: '80GB'
             - cpus_per_task: '1'
       process: |
         #TASK tags={$sample}
@@ -161,7 +161,7 @@ rules:
         - override_process: 1
         - HPC:
             - deps: 'qualimap,stringtie_2,htseq_count'
-            - walltime: '01:00:00'
+            - walltime: '03:00:00'
             - mem: '30GB'
             - cpus_per_task: '1'
       process: |

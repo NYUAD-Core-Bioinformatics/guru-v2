@@ -1,15 +1,16 @@
 ---
 global:
   - indir: data/processed
-  - outdir: data/analysis_malaria
-  - hisat_align: 'data/analysis_malaria/{$sample}/samtools_sort/{$sample}_hisat2.sorted.bam'
+  - outdir: {variable from guru}
+  - user_dir: {variable_from_guru}
+  - hisat_align: '{$self->user_dir}/{$sample}/samtools_sort/{$sample}_hisat2.sorted.bam'
   - sample_rule: (.*)$
   - by_sample_outdir: '1'
   - find_by_dir: '1'
-  - jira_ticket: "NCB-744"
+  - jira_ticket: "ticket-num"
   - root_in_dir: "data/processed"
-  - root_out_dir: "data/analysis_malaria"
-  - analysis_dir: data/analysis_malaria/
+  - root_out_dir: "{$self->user_dir}"
+  - analysis_dir: "{$self->user_dir}"
   - REFERENCE: '/scratch/Reference_Genomes/Public/Protozoa/Plasmodium_falciparum_3D7/Plasmodium_falciparum.ASM276v2'
   - KREFERENCE: "/scratch/Reference_Genomes/Public/Protozoa/Plasmodium_falciparum_3D7/kPlasmodium_falciparum.ASM276v2"
   - ANNOTATION: '/scratch/Reference_Genomes/Public/Protozoa/Plasmodium_falciparum_3D7/Plasmodium_falciparum.ASM276v2.53.gtf'
@@ -17,22 +18,21 @@ global:
       - module: gencore gencore_rnaseq gencore_qc gencore_biosails
       - commands_per_node: '1'
       - cpus_per_task: '1'
-      - account: 'gencore'
 rules:
   - hisat2:
       local:
         - INPUT: '{$self->root_in_dir}/{$sample}/fastp'
         - OUTPUT: '{$self->outdir}/{$sample}_hisat2.sam'
         - HPC:
-            - walltime: '06:00:00'
-            - mem: 55GB
-            - cpus_per_task: '14'
+            - walltime: '03:00:00'
+            - mem: 30GB
+            - cpus_per_task: '8'
       process: |
         #TASK tags={$sample}
         hisat2 \
         -x {$self->REFERENCE} \
         --dta \
-        -p 14 \
+        -p 8 \
         -1 {$self->INPUT}/{$sample}_fastp_read1.fastq.gz \
         -2 {$self->INPUT}/{$sample}_fastp_read2.fastq.gz \
         -S {$self->OUTPUT}
@@ -42,8 +42,8 @@ rules:
         - OUTPUT: '{$self->outdir}/{$sample}_hisat2.bam'
         - HPC:
             - deps: hisat2
-            - walltime: '04:00:00'
-            - mem: 50GB
+            - walltime: '03:00:00'
+            - mem: 30GB
             - cpus_per_task: 1
       process: |
         #TASK tags={$sample}
@@ -55,20 +55,20 @@ rules:
         - HPC:
             - deps: samtools_view
             - walltime: '03:00:00'
-            - mem: 55GB
-            - cpus_per_task: '14'
+            - mem: 30GB
+            - cpus_per_task: '8'
       process: |
         #TASK tags={$sample}
-        samtools sort -@ 14 -o {$self->OUTPUT} {$self->INPUT}
+        samtools sort -@ 8 -o {$self->OUTPUT} {$self->INPUT}
   - stringtie_1:
       local:
         - INPUT: '{$self->hisat_align}'
         - OUTPUT: '{$self->outdir}/{$sample}_stringtie1.gtf'
         - HPC:
             - deps: samtools_sort
-            - walltime: '08:00:00'
-            - mem: 55GB
-            - cpus_per_task: '14'
+            - walltime: '03:00:00'
+            - mem: 30GB
+            - cpus_per_task: '8'
       process: |
         #TASK tags={$sample}
         stringtie \
@@ -76,7 +76,7 @@ rules:
         -G {$self->ANNOTATION} \
         -l {$sample} \
         -o {$self->OUTPUT} \
-        -p 14
+        -p 8
   - stringtie_merge:
       local:
         - override_process: '1'
@@ -84,8 +84,8 @@ rules:
         - OUTPUT: '{$self->outdir}/stringtie_merge.gtf'
         - HPC:
             - deps: stringtie_1
-            - walltime: '48:00:00'
-            - mem: 100GB
+            - walltime: '03:00:00'
+            - mem: 30GB
             - cpus_per_task: 1
       process: |
         #TASK tags={$sample}
@@ -99,9 +99,9 @@ rules:
         - INPUT: '{$self->hisat_align}'
         - HPC:
             - deps: stringtie_merge
-            - walltime: '08:00:00'
-            - mem: 55GB
-            - cpus_per_task: '14'
+            - walltime: '03:00:00'
+            - mem: 30GB
+            - cpus_per_task: '8'
       process: |
         #TASK tags={$sample}
         stringtie \
@@ -110,15 +110,15 @@ rules:
         -G {$self->analysis_dir}/stringtie_merge.gtf  \
         -l {$sample} \
         -o {$self->outdir}/{$sample}_stringtie_2.gtf \
-        -p 14
+        -p 8
   - htseq_count:
       local:
         - INPUT: "{$self->hisat_align}"
         - OUTPUT: "{$self->outdir}/{$sample}_rawCounts.txt"
         - HPC:
             - deps: samtools_sort
-            - walltime: '14:00:00'
-            - mem: '55GB'
+            - walltime: '04:00:00'
+            - mem: '50GB'
             - cpus_per_task: '1'
       process: |
         #TASK tags={$sample}
@@ -152,7 +152,7 @@ rules:
         - override_process: 1
         - HPC:
             - deps: 'qualimap,stringtie_2,htseq_count'
-            - walltime: '02:55:00'
+            - walltime: '03:00:00'
             - mem: '30GB'
             - cpus_per_task: 1
       process: |
