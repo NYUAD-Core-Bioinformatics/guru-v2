@@ -34,16 +34,18 @@ git clone https://github.com/NYUAD-Core-Bioinformatics/guru-v2
 cd guru-v2
 ```
 
+
 #### 4. Setting up the environment
 
-Before starting the application, update connection parameters for SSH and email authentication:
-Note:- Email credentials will be sharing privately by guru admins due to security reasons. 
+Before starting the application, update connection parameters for SSH and email authentication. 
+If the email account and ssh is not created, please refer below a and b section and update the details in the below scripts files.
 
 Open ```scripts/ssh.sh``` and set ```--conn-host``` and ```--conn-login```.
 
 Open ```scripts/email.sh``` and set ```--conn-login``` and ```--conn-password```.
 
-#### 5. Generate SSH Key Pair
+
+###### a. Generate SSH Key Pair
 
 Follow this [SSH key generation](https://www.ssh.com/academy/ssh/keygen) guide to create a key pair.
 
@@ -63,6 +65,15 @@ chmod 644 keys/id_rsa
 
     Note:
     If you're running Guru on a server or cloud, replace AIRFLOW_URL=localhost with your server's IP address in the .env file.
+
+###### b. Generate Email Account
+
+Enable 2-Step Verification by referring this [link](https://myaccount.google.com/security)
+
+Then access below [page](https://myaccount.google.com/apppasswords) to create a app password. 
+Note:- Remove the whitespace from the app password.
+
+
 
 #### 6. Build the Application 
 
