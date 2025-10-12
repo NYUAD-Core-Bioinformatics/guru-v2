@@ -1,0 +1,120 @@
+{% extends 'appbuilder/baselayout.html' %}
+{% from 'airflow/_messages.html' import show_message %}
+
+{% block page_title -%}
+{% if title is defined -%}
+{{ title }} - {{ appbuilder.app_name }}
+{% else -%}
+{{ appbuilder.app_name }}
+{% endif%}
+{% endblock %}
+
+{% block head_meta %}
+{{ super() }}
+{% if scheduler_job is defined and scheduler_job.is_alive() %}
+<meta name="is_scheduler_running" content="True">
+{% endif %}
+{% endblock %}
+
+{% block head_css %}
+{{ super() }}
+{% if not appbuilder.app_theme %}
+<link rel="stylesheet" type="text/css" href="{{ url_for_asset('airflowDefaultTheme.css') }}">
+{% endif %}
+<link rel="stylesheet" type="text/css" href="{{ url_for_asset('materialIcons.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for_asset('main.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for_asset('loadingDots.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for_asset('bootstrap-datetimepicker.min.css') }}">
+<style type="text/css">
+    {
+        % for state,
+        state_color in state_color_mapping.items() %
+    }
+
+    span. {
+            {
+            state
+        }
+    }
+
+        {
+        background-color: {
+                {
+                state_color
+            }
+        }
+
+        ;
+    }
+
+        {
+        % endfor %
+    }
+
+    .checkbox-group:empty {
+        display: none;
+    }
+</style>
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='pin_32.png') }}">
+{% endblock %}
+
+
+ 
+ {% block messages %}
+ 
+
+<body>
+  <h3>Downstream Status Run</h3>
+<form method="post">
+  {{ form.csrf_token }}
+<br>
+<br>
+<br>
+<style>
+  label[for="status_dir"]::after {
+      content: "*";
+      color: red;
+  }
+</style>
+  <p>
+    {{ form.status_dir.label }}
+    {{ form.status_dir(style='width: 50%;') }}
+  </p>
+  <button type="submit" class="btn btn-lg btn-primary">Submit DAG</button>
+</form>
+</body>
+
+
+{% include 'appbuilder/flash.html' %}
+{% endblock %}
+
+{% block footer %}
+{% if not current_user.is_anonymous %}
+<footer class="footer">
+    <div class="container">
+        <div>
+            Version: {% if airflow_version %}<a href="https://pypi.python.org/pypi/apache-airflow/{{ airflow_version }}"
+                target="_blank">v{{ airflow_version }}</a>{% else %} N/A{% endif %}
+            {% if git_version %}<br>Git Version: <strong>{{ git_version }}</strong>{% endif %}
+        </div>
+    </div>
+</footer>
+{% endif %}
+{% endblock %}
+
+{% block tail_js %}
+{{ super() }}
+<script>
+    var Airflow = {
+        serverTimezone: '{{ server_timezone }}',
+        defaultUITimezone: '{{ default_ui_timezone }}',
+    };
+    var hostName = '{{ hostname }}';
+    var csrfToken = '{{ csrf_token() }}';
+    $('time[title]').tooltip();
+</script>
+<script src="{{ url_for_asset('moment.js') }}"></script>
+<script src="{{ url_for_asset('main.js') }}"></script>
+<script src="{{ url_for_asset('bootstrap-datetimepicker.min.js') }}"></script>
+<script src="{{ url_for_asset('bootstrap3-typeahead.min.js') }}"></script>
+{% endblock %}
