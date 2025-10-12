@@ -1,8 +1,6 @@
 from datetime import datetime
 from airflow import DAG
-from airflow.providers.ssh.operators.ssh import SSHOperator
 from airflow.operators.python import PythonOperator
-from airflow.operators.bash import BashOperator
 from airflow.providers.ssh.hooks.ssh import SSHHook
 
 from down_dags.down_status import downstream_status
@@ -18,13 +16,6 @@ ssh_hook = SSHHook(ssh_conn_id='guru_ssh')
 ssh_hook.no_host_key_check = True
 
 
-bash_task = BashOperator(
-    task_id="Display_Status_selection",
-    bash_command='echo "Status Directory: {{ dag_run.conf["status_dir"] }}"',
-    dag=dag,
-)
-
-
 """Defining QC workflow using Python operator"""
 downstream_analysis_task = PythonOperator(
     dag=dag,
@@ -32,4 +23,4 @@ downstream_analysis_task = PythonOperator(
     python_callable=downstream_status,
 )
 
-bash_task >> downstream_analysis_task
+downstream_analysis_task
