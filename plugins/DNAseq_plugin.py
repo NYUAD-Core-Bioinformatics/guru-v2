@@ -311,7 +311,7 @@ class DNAseqBaseView(AppBuilderBaseView):
             # Trigger the DAG run
             now = datetime.now()
             dt_string = now.strftime("%d-%m-%Y %H:%M:%S")
-            run_id = "test_" + dt_string
+            run_id = "downstream_" + dt_string
 
             dagbag = DagBag('dags')
             dag = dagbag.get_dag('dnaseq_dag')
