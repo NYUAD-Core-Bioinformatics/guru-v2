@@ -39,7 +39,7 @@ def file_validate(form, field):
 
 
 class MyForm(Form):
-    status_dir = StringField('Status Run Directory',[InputRequired(),file_validate], render_kw={"placeholder": "Specify the Downstream status path - **/**/logs/000_hpcrunner_logs/stats"  })
+    status_dir = StringField('Status Run Directory',[InputRequired(),file_validate], render_kw={"placeholder": "Specify the Complete Downstream status path - **/**/logs/000_hpcrunner_logs/stats received in the email."  })
 
 class DownseqStatView(AppBuilderBaseView):
     default_view = "down_stat_run"
