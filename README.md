@@ -16,6 +16,8 @@ With ```Custom``` view, the working directory can be flexible.
 
 The easiest way to get started is by using [Docker](https://www.docker.com/).
 
+Optional:- If you prefer pip based installation. Preferably setting a conda environment. Then update the full path of ssh private key in ```scripts/ssh.sh``` file and modify the full path to variable ```YAML_FILES_DIR``` in ```plugins/DNAseq_plugin.py```.
+
 ### 1. Prerequisites
 
 - [Install Docker (version 28.0.0+)](https://www.docker.com/get-started)
@@ -95,6 +97,7 @@ sh scripts/user.sh
 sh scripts/email.sh
 docker compose restart
 ```
+
 
 #### 6. Accessing the Application
 

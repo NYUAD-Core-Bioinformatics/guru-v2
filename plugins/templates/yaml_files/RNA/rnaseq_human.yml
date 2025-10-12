@@ -117,8 +117,8 @@ rules:
         - OUTPUT: "{$self->outdir}/{$sample}_rawCounts.txt"
         - HPC:
             - deps: samtools_sort
-            - walltime: '03:00:00'
-            - mem: '30GB'
+            - walltime: '04:00:00'
+            - mem: '50GB'
             - cpus_per_task: '1'
       process: |
         #TASK tags={$sample}
