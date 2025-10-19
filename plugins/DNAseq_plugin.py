@@ -12,14 +12,11 @@ from datetime import datetime
 import pandas as pd
 import io
 import re
-
-from airflow.providers.ssh.operators.ssh import SSHOperator
-from airflow.operators.python import PythonOperator
-from airflow.operators.bash import BashOperator
 from airflow.providers.ssh.hooks.ssh import SSHHook
 
 #Define the biosails yml. Change this path to custom installation.
-YAML_FILES_DIR = "/opt/airflow/plugins/templates/yaml_files"
+# YAML_FILES_DIR = "/opt/airflow/plugins/templates/yaml_files"
+YAML_FILES_DIR = "/Users/jr5241/cgsb-work/guru-all/guru-v2-staging/plugins/templates/yaml_files"
 
 # Blueprints for the plugin
 bp = Blueprint(
@@ -81,9 +78,12 @@ def download_yaml():
 def upload_yaml():
     """Upload YAML file to the remote base_path using SSHHook."""
     try:
-        base_path = request.form.get('base_path')
-        if not base_path:
-            return jsonify(error="You need to choose a sample process before uploading."), 400
+        output_path = request.form.get('output_path')
+        if not output_path:
+            return jsonify(error="Output path is required."), 400
+        # base_path = request.form.get('base_path')
+        # if not base_path:
+        #     return jsonify(error="You need to choose a sample process before uploading."), 400
 
         if "file" not in request.files:
             return jsonify(error="No file part"), 400
@@ -97,11 +97,11 @@ def upload_yaml():
         sftp = ssh_client.open_sftp()
 
         try:
-            sftp.chdir(base_path)
+            sftp.chdir(output_path)
         except IOError:
             return jsonify(error="Base path does not exist on the remote server."), 400
 
-        remote_file_path = f"{base_path}/{file.filename}"
+        remote_file_path = f"{output_path}/{file.filename}"
         with sftp.open(remote_file_path, 'wb') as remote_file:
             remote_file.write(file.read())
 
@@ -119,9 +119,10 @@ def select_yaml():
     """Copy selected YAML file to the base_path on the remote server."""
     try:
         data = request.get_json()
-        base_path, filename = data.get('base_path'), data.get('filename')
+        # base_path, filename = data.get('base_path'), data.get('filename')
+        output_path, filename = data.get('output_path'), data.get('filename')
 
-        if not base_path or not filename:
+        if not output_path or not filename:
             return jsonify(error="Base path and filename are required."), 400
 
         # Locate the file in its category directory
@@ -142,12 +143,12 @@ def select_yaml():
 
         # Ensure base path exists on the remote server
         try:
-            sftp.chdir(base_path)
+            sftp.chdir(output_path)
         except IOError:
             return jsonify(error="Base path does not exist on the remote server."), 400
 
         # Copy file
-        remote_file_path = os.path.join(base_path, filename)
+        remote_file_path = os.path.join(output_path, filename)
         sftp.put(source_file_path, remote_file_path)
 
         # Close connections
@@ -183,6 +184,28 @@ def listdir():
         return jsonify(message="No valid folders found.", base_path=base_path), 200
 
     return jsonify(base_path=base_path, folder_names=file_list)
+
+
+@samples_bp.route('/validate_output_path', methods=['POST'])
+@csrf.exempt
+def validate_output_path():
+    data = request.get_json()
+    output_path = data.get('output_path')
+
+    if not output_path:
+        return jsonify({"message": "Output path is required.", "status": "error"}), 400
+
+    ssh_hook = SSHHook(ssh_conn_id='guru_ssh')
+    ssh_client = ssh_hook.get_conn()
+    stdin, stdout, stderr = ssh_client.exec_command(
+        f"if [ -d '{output_path}' ]; then echo 'exists'; else echo 'not_found'; fi"
+    )
+    result = stdout.read().decode().strip()
+    ssh_client.close()
+
+    if result == "exists":
+        return jsonify({"message": "Output path is valid!", "status": "success"}), 200
+    return jsonify({"message": "The specified output path does not exist.", "status": "error"}), 200
 
 
 @samples_bp.route('/validate_base_path', methods=['POST'])
@@ -305,13 +328,14 @@ class DNAseqBaseView(AppBuilderBaseView):
             selected_workflow = request.form.get("selected_workflow", "")
             selected_items = request.form.get("selected_items", "")
             base_path = request.form.get("base_path", "")
+            output_path = request.form.get("output_path", "")
             email_address = request.form.get("email_address", "")
             print("Selected Items (comma-separated):", selected_workflow, base_path)
 
             # Trigger the DAG run
             now = datetime.now()
             dt_string = now.strftime("%d-%m-%Y %H:%M:%S")
-            run_id = "downstream_" + dt_string
+            run_id = "test_" + dt_string
 
             dagbag = DagBag('dags')
             dag = dagbag.get_dag('dnaseq_dag')
@@ -319,12 +343,12 @@ class DNAseqBaseView(AppBuilderBaseView):
                 run_id=run_id,
                 state=State.RUNNING,
                 conf={
-                    'selected_items': selected_items, 'base_path': base_path, 'selected_workflow': selected_workflow, 'email_address': email_address, 
+                    'selected_items': selected_items, 'base_path': base_path, 'selected_workflow': selected_workflow, 'output_path': output_path, 'email_address': email_address, 
                 }
             )
 
             # Render the response template
-            data = {'selected_items': selected_items, 'base_path': base_path, 'selected_workflow': selected_workflow, 'email_address': email_address}
+            data = {'selected_items': selected_items, 'base_path': base_path, 'output_path': output_path, 'selected_workflow': selected_workflow, 'email_address': email_address}
             data['status_url'] = f"http://{os.environ['AIRFLOW_URL']}:{os.environ['AIRFLOW_PORT']}/dags/dnaseq_dag/graph"
             return self.render_template("dnaseq_response.html", data=data)
         else:

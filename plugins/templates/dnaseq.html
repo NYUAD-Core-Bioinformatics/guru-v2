@@ -93,15 +93,30 @@
             <!-- Default Mode Section -->
             <div id="foldersSection" class="selection-section">
                 <div class="form-group">
+                    <label for="customBasePath"><strong>Output Path:</strong></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="defaultOutPath" 
+                               placeholder="Enter Output Directory Path (e.g., /scratch/xxxxx/xxxxx)">
+                        <span class="input-group-btn">
+                            <button class="btn btn-primary" onclick="SaveOutputPath('default')">Set Folder</button>
+                        </span>
+                    </div>
+                    <div id="defaultBaseError" class="alert alert-danger" style="display: none;"></div>
+                </div>
+
+                <div class="form-group">
                     <label for="basePath"><strong>Sequence Path:</strong></label>
                     <div class="input-group">
                         <input type="text" class="form-control" id="basePath" 
-                               placeholder="Enter base path (e.g., /scratch/<net-id>/Some-dir/UnAligned/data/processed)">
+                               placeholder="Enter Sample Sequence Path (e.g., /scratch/<net-id>/Some-dir/UnAligned/data/processed)">
                         <span class="input-group-btn">
                             <button class="btn btn-primary" onclick="listFolders()">List Folders</button>
                         </span>
                     </div>
                 </div>
+
+
+
                 
                 <!-- Results Section - Initially Hidden -->
                 <div id="folderResults" style="display: none;">
@@ -115,15 +130,27 @@
             <!-- Custom Mode Section -->
             <div id="customSection" class="selection-section" style="display: none;">
                 <div class="form-group">
-                    <label for="customBasePath"><strong>Sequence Path:</strong></label>
+                    <label for="customBasePath"><strong>Output Path:</strong></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="customOutPath" 
+                               placeholder="Enter Output Path (e.g., /scratch/xxxxx/xxxxx)">
+                        <span class="input-group-btn">
+                            <button class="btn btn-primary" onclick="SaveOutputPath('custom')">Set Folder</button>
+                        </span>
+                    </div>
+                    <div id="customOutPathMessage" class="alert alert-danger" style="display:none; margin-top:10px;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="customOutPath"><strong>Sequence Path:</strong></label>
                     <div class="input-group">
                         <input type="text" class="form-control" id="customBasePath" 
-                               placeholder="Enter base path (e.g., /Users/jr5241/test/UnAligned/)">
+                               placeholder="Enter Sequence Sample Path (e.g., /scratch/xxxxx/xxxxx)">
                         <span class="input-group-btn">
                             <button class="btn btn-primary" onclick="Savefile()">Set Folder</button>
                         </span>
                     </div>
-                    <div id="customBaseError" class="alert alert-danger" style="display: none;"></div>
+                    <div id="customBasePathMessage" class="alert alert-danger" style="display:none; margin-top:10px;"></div>
                 </div>
 
                 <div class="form-group">
@@ -135,6 +162,7 @@
                             <button class="btn btn-info" onclick="parseUploadedFile()">Parse File</button>
                         </span>
                     </div>
+                    <div id="fileUploadMessage" class="alert alert-danger" style="display:none; margin-top:10px;"></div>
                 </div>
 
                 <div id="customCheckboxes" class="checkbox-group"></div>
@@ -199,6 +227,7 @@ sampleS3_20252211_L001,sampleS3_20252211_L001_fastp_read1.fastq.gz,sampleS3_2025
         <input type="hidden" name="selected_items" id="selected_items_input">
         <input type="hidden" name="base_path" id="base_path_input">
         <input type="hidden" id="selected_workflow_input" name="selected_workflow">
+        <input type="hidden" name="output_path" id="output_path_input">
         <button type="submit" class="btn btn-lg btn-primary">Submit DAG</button>
         <div id="submitError" class="alert alert-danger" style="display: none;"></div>
     </form>
@@ -262,49 +291,68 @@ sampleS3_20252211_L001,sampleS3_20252211_L001_fastp_read1.fastq.gz,sampleS3_2025
         document.getElementById("selected_workflow_input").value = value;
     }
 
+
     function validateAndSubmit(event) {
-        event.preventDefault();
+    event.preventDefault();
 
-        let basePath = "";
-        if (document.getElementById("foldersSection").style.display !== "none") {
-            basePath = document.getElementById("basePath").value.trim();
-        } else if (document.getElementById("customSection") && document.getElementById("customSection").style.display !== "none") {
-            basePath = document.getElementById("customBasePath").value.trim();
-        }
+    let basePath = "";
+    let outputPath = "";
 
-        let selectedSamples = document.querySelectorAll("input[type='checkbox']:checked");
-        let selectedWorkflow = document.getElementById("selected_workflow_input").value;
-        let submitError = document.getElementById("submitError");
-        let emailAddressField = document.getElementsByName("email_address")[0];
-        let emailAddress = emailAddressField ? emailAddressField.value.trim() : "";
+    // detect mode
+    const isDefaultMode = document.getElementById("foldersSection").style.display !== "none";
+    const isCustomMode = document.getElementById("customSection") && document.getElementById("customSection").style.display !== "none";
 
-        if (!emailAddress) {
-            submitError.textContent = "Email address is required.";
-            submitError.style.display = "block";
-            return;
-        }
-
-        if (!basePath) {
-            submitError.textContent = "Base path is required.";
-            submitError.style.display = "block";
-            return;
-        }
-
-        if (selectedSamples.length === 0) {
-            submitError.textContent = "You must select at least one sample.";
-            submitError.style.display = "block";
-            return;
-        }
-
-        if (!selectedWorkflow) {
-            submitError.textContent = "You must either select a YAML file or upload one.";
-            submitError.style.display = "block";
-            return;
-        }
-
-        submitError.style.display = "none";
-        document.getElementById("dagForm").submit();
+    if (isDefaultMode) {
+        basePath = document.getElementById("basePath").value.trim();
+        outputPath = document.getElementById("defaultOutPath").value.trim();
+    } else if (isCustomMode) {
+        basePath = document.getElementById("customBasePath").value.trim();
+        outputPath = document.getElementById("customOutPath").value.trim();
     }
+
+    let selectedSamples = document.querySelectorAll("input[type='checkbox']:checked");
+    let selectedWorkflow = document.getElementById("selected_workflow_input").value;
+    let submitError = document.getElementById("submitError");
+    let emailAddressField = document.getElementsByName("email_address")[0];
+    let emailAddress = emailAddressField ? emailAddressField.value.trim() : "";
+
+    // --- validations ---
+    if (!outputPath) {
+        submitError.textContent = "Output path is required.";
+        submitError.style.display = "block";
+        return;
+    }
+    document.getElementById("output_path_input").value = outputPath;
+
+    if (!emailAddress) {
+        submitError.textContent = "Email address is required.";
+        submitError.style.display = "block";
+        return;
+    }
+
+    if (!basePath) {
+        submitError.textContent = "Base path is required.";
+        submitError.style.display = "block";
+        return;
+    }
+
+    if (selectedSamples.length === 0) {
+        submitError.textContent = "You must select at least one sample.";
+        submitError.style.display = "block";
+        return;
+    }
+
+    if (!selectedWorkflow) {
+        submitError.textContent = "You must either select a YAML file or upload one.";
+        submitError.style.display = "block";
+        return;
+    }
+
+    // --- submit if all good ---
+    submitError.style.display = "none";
+    document.getElementById("dagForm").submit();
+}
+
 
     // Attach validation function to form submission
     document.getElementById("dagForm").addEventListener("submit", validateAndSubmit);
@@ -382,109 +430,120 @@ sampleS3_20252211_L001,sampleS3_20252211_L001_fastp_read1.fastq.gz,sampleS3_2025
             });
     }
 
+    
 
-    function uploadYamlFile() {
-        const fileInput = document.getElementById("yamlUpload");
-        const uploadError = document.getElementById("uploadError");
-        let basePath = "";
+function uploadYamlFile() {
+    const fileInput = document.getElementById("yamlUpload");
+    const uploadError = document.getElementById("uploadError");
 
-        if (document.getElementById("foldersSection").style.display !== "none") {
-            basePath = document.getElementById("basePath").value.trim();
-        } else if (document.getElementById("customSection").style.display !== "none") {
-            basePath = document.getElementById("customBasePath").value.trim();
-        }
+    // Detect mode and use correct paths
+    const isDefaultMode = document.getElementById("foldersSection").style.display !== "none";
+    const isCustomMode = document.getElementById("customSection") && document.getElementById("customSection").style.display !== "none";
 
-        if (!fileInput.files.length) {
-            uploadError.textContent = "Please select a file to upload.";
-            uploadError.style.display = "block";
-            return;
-        }
+    const outputPath = isDefaultMode
+        ? document.getElementById("defaultOutPath").value.trim()
+        : document.getElementById("customOutPath").value.trim();
 
-        if (!basePath) {
-            uploadError.textContent = "Please enter a base path before uploading.";
-            uploadError.style.display = "block";
-            return;
-        }
+    const outputPathInput = document.getElementById("output_path_input");
 
-        const file = fileInput.files[0];
+    uploadError.textContent = "";
+    uploadError.style.display = "none";
 
-        // Store uploaded YAML file in hidden input
-        updateSelectedWorkflow(file.name);
+    if (!fileInput.files.length) {
+        uploadError.textContent = "Please select a file to upload.";
+        uploadError.style.display = "block";
+        return;
+    }
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("base_path", basePath);
+    if (!outputPath) {
+        uploadError.textContent = "Please enter an output path before uploading.";
+        uploadError.style.display = "block";
+        uploadError.style.color = "red";
+        return;
+    }
 
-        fetch('/upload_yaml', {
-            method: 'POST',
-            body: formData
-        })
-            .then(response => response.json())
-            .then(result => {
-                if (result.error) {
-                    uploadError.textContent = result.error;
-                    uploadError.style.display = "block";
-                } else {
-                    uploadError.style.color = "green";
-                    uploadError.textContent = `Upload successful to: ${basePath}/${file.name}`;
-                    uploadError.style.display = "block";
-                }
-            })
-            .catch(() => {
-                uploadError.textContent = "Upload failed. Try again.";
+    const file = fileInput.files[0];
+
+    // Store uploaded YAML file in hidden input
+    updateSelectedWorkflow(file.name);
+    if (outputPathInput) outputPathInput.value = outputPath;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("output_path", outputPath);
+
+    fetch("/upload_yaml", {
+        method: "POST",
+        body: formData,
+    })
+        .then((response) => response.json())
+        .then((result) => {
+            if (result.error) {
+                uploadError.textContent = result.error;
                 uploadError.style.display = "block";
-            });
-    }
-
-
-    function selectYamlFile() {
-        let selected = document.querySelector('input[name="yamlFile"]:checked');
-        let errorContainer = document.getElementById('errorContainer');
-        let basePath = "";
-
-        if (document.getElementById("foldersSection").style.display !== "none") {
-            basePath = document.getElementById("basePath").value.trim();
-        } else if (document.getElementById("customSection") && document.getElementById("customSection").style.display !== "none") {
-            basePath = document.getElementById("customBasePath").value.trim();
-        }
-
-        if (!selected) {
-            errorContainer.textContent = "Please select a YAML file to copy.";
-            errorContainer.style.display = "block";
-            return;
-        }
-
-        if (!basePath) {
-            errorContainer.textContent = "Please enter a base path before selecting.";
-            errorContainer.style.display = "block";
-            return;
-        }
-
-        updateSelectedWorkflow(selected.value);
-
-        fetch('/select_yaml', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ filename: selected.value, base_path: basePath })
+            } else {
+                uploadError.style.color = "green";
+                uploadError.textContent = `Upload successful to: ${outputPath}/${file.name}`;
+                uploadError.style.display = "block";
+            }
         })
-            .then(response => response.json())
-            .then(result => {
+        .catch(() => {
+            uploadError.textContent = "Upload failed. Try again.";
+            uploadError.style.display = "block";
+        });
+}
 
-                if (result.error) {
-                    errorContainer.textContent = result.error;
-                    errorContainer.style.display = "block";
-                } else {
-                    errorContainer.style.color = "green";
-                    errorContainer.textContent = result.message;
-                    errorContainer.style.display = "block";
-                }
-            })
-            .catch(() => {
-                errorContainer.textContent = "Selection failed. Try again.";
-                errorContainer.style.display = "block";
-            });
+
+function selectYamlFile() {
+    let selected = document.querySelector('input[name="yamlFile"]:checked');
+    let errorContainer = document.getElementById("errorContainer");
+
+    const isDefaultMode = document.getElementById("foldersSection").style.display !== "none";
+    const isCustomMode = document.getElementById("customSection") && document.getElementById("customSection").style.display !== "none";
+
+    const outputPath = isDefaultMode
+        ? document.getElementById("defaultOutPath").value.trim()
+        : document.getElementById("customOutPath").value.trim();
+
+    const basePath = isDefaultMode
+        ? document.getElementById("basePath").value.trim()
+        : document.getElementById("customBasePath").value.trim();
+
+    if (!selected) {
+        errorContainer.textContent = "Please select a YAML file to copy.";
+        errorContainer.style.display = "block";
+        return;
     }
 
+    if (!basePath) {
+        errorContainer.textContent = "Please enter a base path before selecting.";
+        errorContainer.style.display = "block";
+        return;
+    }
+
+    updateSelectedWorkflow(selected.value);
+
+    fetch("/select_yaml", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: selected.value, output_path: outputPath }),
+    })
+        .then((response) => response.json())
+        .then((result) => {
+            if (result.error) {
+                errorContainer.textContent = result.error;
+                errorContainer.style.display = "block";
+            } else {
+                errorContainer.style.color = "green";
+                errorContainer.textContent = result.message;
+                errorContainer.style.display = "block";
+            }
+        })
+        .catch(() => {
+            errorContainer.textContent = "Selection failed. Try again.";
+            errorContainer.style.display = "block";
+        });
+}
 
 
     // Ensure "Default" mode is selected on page load
@@ -589,7 +648,7 @@ sampleS3_20252211_L001,sampleS3_20252211_L001_fastp_read1.fastq.gz,sampleS3_2025
 
     async function Savefile() {
         const basePath = document.getElementById("customBasePath").value.trim(),
-            fileBaseError = document.getElementById("customBaseError"),
+            fileBaseError = document.getElementById("customBasePathMessage"),
             basePathInput = document.getElementById("base_path_input");
 
         fileBaseError.textContent = "";
@@ -623,19 +682,66 @@ sampleS3_20252211_L001,sampleS3_20252211_L001_fastp_read1.fastq.gz,sampleS3_2025
         }
     }
 
+async function SaveOutputPath(mode = "default") {
+    // Select correct fields based on mode
+    const outPathField = mode === "custom"
+        ? document.getElementById("customOutPath")
+        : document.getElementById("defaultOutPath");
+
+    const outPathError = mode === "custom"
+        ? document.getElementById("customOutPathMessage")
+        : document.getElementById("defaultBaseError");
+
+    const outputPathInput = document.getElementById("output_path_input");
+    const outPath = outPathField.value.trim();
+
+    // Reset message
+    outPathError.textContent = "";
+    outPathError.style.display = "none";
+
+    if (!outPath) {
+        outPathError.textContent = "Please enter a valid output path.";
+        outPathError.style.display = "block";
+        outPathError.style.color = "red";
+        return;
+    }
+
+    try {
+        const res = await fetch("/validate_output_path", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ output_path: outPath }),
+        });
+
+        const data = await res.json();
+
+        outPathError.textContent = data.message;
+        outPathError.style.display = "block";
+        outPathError.style.color = data.status === "success" ? "green" : "red";
+
+        if (data.status === "success") {
+            outputPathInput.value = outPath;
+        }
+    } catch (err) {
+        outPathError.textContent = "Network or fetch error. Check console for details.";
+        outPathError.style.display = "block";
+        outPathError.style.color = "red";
+        console.error("Fetch error:", err);
+    }
+}
 
 
     async function uploadFile() {
         const fileInput = document.getElementById("fileUpload"),
-            fileBaseError = document.getElementById("customBaseError"),
+            fileBaseError = document.getElementById("fileUploadMessage"),
             basePath = document.getElementById("customBasePath").value.trim(),
-            basePathInput = document.getElementById("base_path_input"); // ✅ Ensures base_path is stored
+            basePathInput = document.getElementById("base_path_input"); 
 
         fileBaseError.textContent = "";
         fileBaseError.style.display = "none";
 
         if (!basePath) {
-            fileBaseError.textContent = "Please enter a valid base path before uploading.";
+            fileBaseError.textContent = "Please enter a valid sequence path before uploading.";
             fileBaseError.style.display = "block";
             fileBaseError.style.color = "red";
             return;
@@ -678,7 +784,7 @@ sampleS3_20252211_L001,sampleS3_20252211_L001_fastp_read1.fastq.gz,sampleS3_2025
     }
 
     async function parseUploadedFile() {
-        const errorMsg = document.getElementById("customBaseError"),
+        const errorMsg = document.getElementById("fileUploadMessage"),
             basePath = document.getElementById("customBasePath").value.trim(),
             fileInput = document.getElementById("fileUpload"),
             checkboxesDiv = document.getElementById("customCheckboxes");

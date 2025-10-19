@@ -32,8 +32,8 @@ from pprint import pprint
 
 
 def check_for_hpcrunner_stats(line, context):
-    base_path = context['dag_run'].conf['base_path']
-    if base_path not in line:
+    output_path = context['dag_run'].conf['output_path']
+    if output_path not in line:
         return False
     else:
         if 'stats' in line and '000_hpcrunner_logs' in line:
