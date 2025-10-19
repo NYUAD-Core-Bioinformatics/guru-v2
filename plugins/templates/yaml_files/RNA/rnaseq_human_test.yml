@@ -1,8 +1,8 @@
 ---
 global:
   - indir: data/processed
-  - outdir: {variable from guru}
-  - user_dir: {variable_from_guru}
+  - outdir: dont_change_this_value
+  - user_dir: dont_change_this_value
   - hisat_align: '{$self->user_dir}/{$sample}/samtools_sort/{$sample}_hisat2.sorted.bam'
   - sample_rule: (.*)$
   - by_sample_outdir: '1'
