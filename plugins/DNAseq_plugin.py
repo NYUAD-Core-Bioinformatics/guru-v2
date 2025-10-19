@@ -15,8 +15,7 @@ import re
 from airflow.providers.ssh.hooks.ssh import SSHHook
 
 #Define the biosails yml. Change this path to custom installation.
-# YAML_FILES_DIR = "/opt/airflow/plugins/templates/yaml_files"
-YAML_FILES_DIR = "/Users/jr5241/cgsb-work/guru-all/guru-v2-staging/plugins/templates/yaml_files"
+YAML_FILES_DIR = "/opt/airflow/plugins/templates/yaml_files"
 
 # Blueprints for the plugin
 bp = Blueprint(
