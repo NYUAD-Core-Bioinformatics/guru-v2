@@ -56,9 +56,9 @@ def downstream_qc_workflow_to_slurm(ds, **kwargs):
         updated_yaml = content.replace("dont_change_this_value", output_path)
         with sftp.open(remote_yaml_path, 'w') as f:
             f.write(updated_yaml)
-        print(f"✅ Updated YAML successfully at {remote_yaml_path}")
+        print(f" Updated YAML successfully at {remote_yaml_path}")
     except Exception as e:
-        print(f"⚠️ Error updating YAML: {e}")
+        print(f" Error updating YAML: {e}")
         raise
 
 
@@ -91,7 +91,7 @@ def downstream_qc_workflow_to_slurm(ds, **kwargs):
     if not stats_dir:
         match = re.search(r"(/scratch/.*/000_hpcrunner_logs/stats)", "\n".join(agg_output))
         stats_dir = match.group(1) if match else "N/A"
-    print(f"✅ Extracted Stats dir: {stats_dir}")
+    print(f" Extracted Stats dir: {stats_dir}")
 
 
     #Store stats_dir in XCom
@@ -122,7 +122,7 @@ def send_stats_email(email_id, base_path, output_path, samples, stats_dir):
         f"Selected samples: {samples}\n"
         f"Sequence path: {base_path}\n"
         f"Output path: {output_path}\n\n"
-        "You can track the status of jobs at http://localhost:8080/downseqstatview, Simply paste the below path."
+        "You can track the status of jobs at localhost:8080/downseqstatview, Simply paste the below path."
         f"Stats directory: {stats_dir}\n\n"
         "You will automatically be notified once the run completes successfully.\n"
         "This is an automated message — please do not reply.\n\n"
