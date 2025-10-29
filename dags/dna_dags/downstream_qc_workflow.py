@@ -53,7 +53,8 @@ def downstream_qc_workflow_to_slurm(ds, **kwargs):
     try:
         with sftp.open(remote_yaml_path, 'r') as f:
             content = f.read().decode()
-        updated_yaml = content.replace("dont_change_this_value", output_path)
+        updated_yaml = content.replace("dont_change_this_output_value", output_path)
+        updated_yaml = updated_yaml.replace("dont_change_this_input_value", base_path)
         with sftp.open(remote_yaml_path, 'w') as f:
             f.write(updated_yaml)
         print(f" Updated YAML successfully at {remote_yaml_path}")
