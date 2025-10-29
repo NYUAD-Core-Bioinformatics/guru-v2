@@ -122,7 +122,7 @@ def send_stats_email(email_id, base_path, output_path, samples, stats_dir):
         f"Selected samples: {samples}\n"
         f"Sequence path: {base_path}\n"
         f"Output path: {output_path}\n\n"
-        "You can track the status of jobs at localhost:8080/downseqstatview, Simply paste the below path."
+        "You can track the status of jobs at localhost:8080/downseqstatview, Simply paste the below path.\n"
         f"Stats directory: {stats_dir}\n\n"
         "You will automatically be notified once the run completes successfully.\n"
         "This is an automated message — please do not reply.\n\n"
