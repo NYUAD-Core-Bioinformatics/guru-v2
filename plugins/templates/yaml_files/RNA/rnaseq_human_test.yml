@@ -22,7 +22,7 @@ global:
 rules:
   - hisat2:
       local:
-        - INPUT: '{$self->root_in_dir}/{$sample}/fastp'
+        - INPUT: '{$self->base_dir}/data/processed/{$sample}/fastp'
         - OUTPUT: '{$self->outdir}/{$sample}_hisat2.sam'
         - HPC:
             - walltime: '03:00:00'
