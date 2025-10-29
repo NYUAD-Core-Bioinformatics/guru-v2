@@ -2,6 +2,7 @@
 global:
   - indir: data/processed
   - outdir: dont_change_this_value
+  - base_dir: dont_change_this_input_value
   - user_dir: dont_change_this_value
   - hisat_align: '{$self->out_dir}/{$sample}/samtools_sort/{$sample}_hisat2.sorted.bam'
   - sample_rule: (.*)$
@@ -21,7 +22,7 @@ global:
 rules:
   - hisat2:
       local:
-        - INPUT: '{$self->root_in_dir}/{$sample}/fastp'
+        - INPUT: '{$self->seq_dir}/data/processed/{$sample}/fastp'
         - OUTPUT: '{$self->outdir}/{$sample}_hisat2.sam'
         - HPC:
             - walltime: '03:00:00'
@@ -80,7 +81,7 @@ rules:
   - stringtie_merge:
       local:
         - override_process: '1'
-        - outdir: 'data/analysis'
+        - outdir: '{$self->analysis_dir}'
         - OUTPUT: '{$self->outdir}/stringtie_merge.gtf'
         - HPC:
             - deps: stringtie_1
