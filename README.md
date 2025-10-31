@@ -73,7 +73,7 @@ chmod 644 keys/id_rsa
 Enable 2-Step Verification by referring this [link](https://myaccount.google.com/security)
 
 Then access below [page](https://myaccount.google.com/apppasswords) to create a app password. 
-Note:- Remove the whitespace from the app password.
+Note:- Copy and paste the password in a notepad and remove the whitespace. 
 
 
 
@@ -91,10 +91,9 @@ For Windows:
 
 ``` bash
 docker compose up --build -d
-sh scripts/email.sh
-sh scripts/ssh.sh
-sh scripts/user.sh
-sh scripts/email.sh
+./scripts/ssh.sh
+./scripts/user.sh
+./scripts/email.sh
 docker compose restart
 ```
 
@@ -115,7 +114,7 @@ Guru classifies downstream analysis into two options:
 
 ##### 1) Default Section
 
-Maintain the directory structure as:
+Maintain the Sequencing/Input directory structure as:
 ```
 UnAligned/data/processed
 ```
@@ -129,8 +128,8 @@ If you set the base path as:
 
 Then the ```fastq``` folders should be located as:
 ```
-/scratch/user1/nextseq/20922123/UnAligned/data/processed/sample1/fastp
-/scratch/user1/nextseq/20922123/UnAligned/data/processed/sample2/fastp
+/scratch/user1/nextseq/20922123/UnAligned/data/processed/sample1/fastp/sample1_read1_fastq.gz
+/scratch/user1/nextseq/20922123/UnAligned/data/processed/sample2/fastp/sample2_read1_fastq.gz
 ```
 
 Once you set the base path and click List folders, you'll be able to select samples to proceed with the analysis.
