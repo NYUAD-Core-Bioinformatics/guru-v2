@@ -21,7 +21,7 @@ Optional:- If you prefer pip based installation. Preferably setting a conda envi
 ### 1. Prerequisites
 
 - [Install Docker (version 28.0.0+)](https://www.docker.com/get-started)
-- [Install gitbash](https://git-scm.com/downloads) for Windows users
+- Powershell for windows users only
 
 ### 2. Launch Docker application 
 
@@ -29,7 +29,7 @@ Launch and start the docker service on your laptop or server.
 
 ### 3. Clone the Repository
 
-Launch terminal for Linux/OSX and open gitbash application for windows.
+Launch terminal application for Linux/OSX and open Powershell application for windows.
 
 ```bash
 git clone https://github.com/NYUAD-Core-Bioinformatics/guru-v2
@@ -87,7 +87,7 @@ For Linux/MacOSX:
 sh build.sh
 ```
 
-For Windows:
+For Windows, excecute below in Powershell:
 
 ``` bash
 docker compose up --build -d
