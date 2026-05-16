@@ -1,4 +1,4 @@
-FROM apache/airflow:2.11.0
+FROM apache/airflow:2.11.2
 ENV TZ=Asia/Dubai
 USER root
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
